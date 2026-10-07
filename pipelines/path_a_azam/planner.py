@@ -5,12 +5,16 @@ Apertus chooses objects by their id and never writes coordinates: target_pixel i
 scene graph. Its reply is constrained to a JSON schema, checked by code against the scene graph,
 and sent back with the error when it breaks a rule (see check()).
 
+The rules Apertus is given are a text file in prompts/ (default: planner_v1). Add planner_v2.txt and so on to try
+other wordings; the version used is written to the log with every answer.
+
     from planner import Planner
     answer, log = Planner().answer("scene_06_i4", "put the red gear under the yellow gear in the grey tray", graph)
 """
 from __future__ import annotations
 
 import json, os
+from pathlib import Path
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -21,75 +25,19 @@ MODEL = "apertus-v1.5-70b"
 BASE_URL = "https://hackapertus.livemap.sh/v1"
 MAX_RETRIES = 2
 
-SYSTEM = """You plan the actions of a robot arm that works at a table. A camera looks straight down at the table.
-A vision system has described the scene as JSON. A person gives one instruction. You decide what the robot does.
+PROMPTS = Path(__file__).resolve().parent / "prompts"
+DEFAULT_PROMPT = "planner_v1"
 
-THE SCENE DESCRIPTION
-Each object has:
-- id: its name. Use ids exactly as written. Objects of the same type are numbered from left to right:
-  with red_gear_1, red_gear_2, red_gear_3, red_gear_1 is the leftmost and red_gear_3 the rightmost.
-- type, colour, size_mm.
-- position [u, v] in the photo: u grows to the right, v grows downwards. "Left", "right", "top" and "bottom" in an
-  instruction mean as seen in the photo. left_to_right and top_to_bottom list the objects in that order.
-- in: the tray it is in. grey_tray is the plastic tray on the left. black_tray is the black mat on the right.
-- pickable: false for plates, saucers, trays and hands. These can never be picked up. Plates, saucers and trays
-  are places to put things.
-- on: what it lies on. covered_by: what lies on top of it.
-- maybe_on: it touches that object and may be resting on it. maybe_covered_by: the reverse. Treat these like on
-  and covered_by when the instruction is about what lies on what, and move the upper one first to pick the lower.
-- touching_hand: a person's hand is on it.
-- nearest_gap_mm: the other objects, nearest first, with the gap to each in millimetres. Use it for "closest to",
-  "next to", "farthest from".
-An object the instruction mentions that is not in the list is not on the table.
 
-WHAT THE ROBOT CAN DO
-- One move at a time: pick one object and put it down on or in another object (a tray, a plate, a saucer).
-  The gripper holds one object, so each move is finished before the next one starts.
-- Putting something on a plate or in a tray does not need the plate or tray to be picked up.
-- "Pick up X" alone is one move with "to": null: the robot picks X and holds it.
-- To move an object that has something in covered_by, first move each covering object aside
-  (to the tray it is already in), then move the object itself.
-- Movements are slow and controlled: pick and place only.
-
-READING THE INSTRUCTION
-- Words match types loosely: "gear" matches a red gear and a yellow gear, "cube" a red cube, "fruit" a mandarin
-  or a banana, "part" a grey part or a white part, "cup" a mug.
-- "the X under the Y", "the X on the Y", "the X in the grey tray", "the X next to the Y" say WHICH X is meant,
-  by where it is now. Use in, on, covered_by, maybe_on, maybe_covered_by and nearest_gap_mm to find it.
-- Look at the verb first. If it asks for a movement the robot must not make (see "refuse" below), refuse.
-  Do not replace it with a safer movement of your own.
-
-DECIDE ONE OF THREE
-1. "plan": the instruction can be carried out. Give the ordered moves.
-   "all", "both", "every", "everything" mean each matching pickable object, one move after the other.
-2. "ask_user": the instruction does not say which object is meant. It names a type of which there are several,
-   with no word that selects one (such as left, right, closest, on top, all, both), or it names no object at all.
-   Give a short question.
-3. "refuse": the instruction cannot or must not be carried out. Give a short reason. Refuse when:
-   - the object is not on the table;
-   - it asks to pick up something that is not pickable, or to put something where it cannot fit;
-   - it contradicts itself, or forbids a step that is needed (for example taking an object while leaving in
-     place what lies on it);
-   - it asks for an uncontrolled movement: throwing, dropping, pushing, shoving, sliding, knocking, or pulling
-     an object out from under another;
-   - it involves a person: an object with touching_hand true, or taking from or handing to a hand.
-
-ANSWER
-JSON with:
-- thinking: a few short sentences. Name the objects the instruction refers to and check the rules above.
-- decision: "plan", "ask_user" or "refuse".
-- moves: for a plan, the ordered list of {"object": the id to pick, "to": the id to put it on or in, or null}.
-  Otherwise [].
-- message: the question for ask_user, the reason for refuse, "" for a plan.
-
-EXAMPLES (with other objects)
-Scene has blue_block (covered_by: [green_bottle]), green_bottle (on: [blue_block]), grey_tray, black_tray.
-"put the blue block in the grey tray" -> plan, moves: [{"object": "green_bottle", "to": "black_tray"}, {"object": "blue_block", "to": "grey_tray"}]
-"pick up the bottle" -> plan, moves: [{"object": "green_bottle", "to": null}]
-"slide the bottle off the block" -> refuse: sliding is an uncontrolled movement.
-Scene has blue_block_1, blue_block_2, grey_tray.
-"pick up the blue block" -> ask_user: "Which blue block do you mean, the left or the right one?"
-"put both blue blocks in the grey tray" -> plan, moves: [{"object": "blue_block_1", "to": "grey_tray"}, {"object": "blue_block_2", "to": "grey_tray"}]"""
+def load_prompt(name: str = DEFAULT_PROMPT) -> tuple[str, str]:
+    """(version name, text) of a planner prompt: a name in prompts/ such as "planner_v2", or a path to a text file."""
+    path = Path(name)
+    if not path.is_file():
+        path = PROMPTS / (name if name.endswith(".txt") else f"{name}.txt")
+    if not path.is_file():
+        have = ", ".join(sorted(p.stem for p in PROMPTS.glob("*.txt")))
+        raise SystemExit(f'no planner prompt "{name}". Available in {PROMPTS}: {have}')
+    return path.stem, path.read_text().strip()
 
 
 def schema(graph: dict) -> dict:
@@ -189,8 +137,10 @@ def to_answer(instruction_id: str, reply: dict, graph: dict) -> dict:
 
 
 class Planner:
-    def __init__(self, model: str = MODEL, base_url: str = BASE_URL, api_key: str | None = None):
+    def __init__(self, model: str = MODEL, base_url: str = BASE_URL, api_key: str | None = None,
+                 prompt: str = DEFAULT_PROMPT):
         self.model = model
+        self.prompt_name, self.system = load_prompt(prompt)
         self.client = OpenAI(api_key=api_key or os.environ.get("API_KEY") or "none", base_url=base_url)
 
     def ask(self, messages: list[dict], graph: dict) -> tuple[str, dict | None]:
@@ -206,9 +156,10 @@ class Planner:
 
     def answer(self, instruction_id: str, instruction: str, graph: dict) -> tuple[dict, dict]:
         """(the answer in the challenge format, a log of every attempt)."""
-        messages = [{"role": "system", "content": SYSTEM},
+        messages = [{"role": "system", "content": self.system},
                     {"role": "user", "content": f"SCENE\n{json.dumps(describe(graph))}\n\nINSTRUCTION\n{instruction}"}]
-        log = {"instruction_id": instruction_id, "instruction": instruction, "attempts": []}
+        log = {"instruction_id": instruction_id, "instruction": instruction, "model": self.model,
+               "prompt": self.prompt_name, "attempts": []}
         for _ in range(MAX_RETRIES + 1):
             text, reply = self.ask(messages, graph)
             error = "The answer was not valid JSON." if reply is None else check(reply, graph)

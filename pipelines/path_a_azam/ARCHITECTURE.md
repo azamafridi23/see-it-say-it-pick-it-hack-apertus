@@ -59,6 +59,7 @@ Apertus does all the language reasoning. SAM 3 and the depth model only see.
 | `apertus_list.py` | Asks Apertus to list the objects in a photo |
 | `scene_graph.py` | Builds the scene graph from the detections |
 | `planner.py` | Asks Apertus for the answer, checks it, retries, converts to the challenge format |
+| `prompts/` | The rules given to Apertus, one text file per version; `--prompt` picks one, `planner_v1` is the default |
 | `dev/check_graph.py` | Development only: compares scene graphs with the ground-truth masks |
 | `dev/ablate.py` | Development only: hides prompts to test how unknown objects are found |
 | `dev/try_prompts.py` | Development only: compares prompt wordings on one scene |

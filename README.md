@@ -55,6 +55,9 @@ Then fill in `.env`:
 SAM 3 and the depth model run on your own machine (Apple GPU, CUDA or CPU). Apertus is reached
 through any OpenAI-compatible server: set it with `--base-url` and `--model`.
 
+The rules given to Apertus are text files in `pipelines/path_a_azam/prompts/`. `--prompt planner_v2`
+picks a version; the default is `planner_v1`.
+
 The run also writes `results/path_a_azam.log.jsonl`, with every Apertus reply and correction.
 
 ## Repository layout

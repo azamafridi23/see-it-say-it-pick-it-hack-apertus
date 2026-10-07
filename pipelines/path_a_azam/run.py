@@ -4,6 +4,8 @@
     python pipelines/path_a_azam/run.py --data dataset --out results/path_a_azam.json
     python starter/evaluate.py results/path_a_azam.json --data dataset
 
+    --prompt planner_v2    try another version of the rules given to Apertus (files in prompts/)
+
 Per photo:        SAM 3 finds the objects, Apertus names what it sees, code builds the scene graph (scene_graph.py).
 Per instruction:  Apertus reads the scene graph and the instruction and answers; code checks the answer (planner.py).
 
@@ -32,12 +34,15 @@ def main():
     ap.add_argument("--out", type=Path, default=Path("results.json"))
     ap.add_argument("--model", default=planner.MODEL)
     ap.add_argument("--base-url", default=planner.BASE_URL)
+    ap.add_argument("--prompt", default=planner.DEFAULT_PROMPT,
+                    help=f"planner prompt: a name in prompts/ or a path to a text file (default: {planner.DEFAULT_PROMPT})")
     ap.add_argument("--team", default="team")
     ap.add_argument("--no-apertus-vision", action="store_true", help="do not ask Apertus to name the objects it sees")
     ap.add_argument("--graphs", type=Path, default=Path(__file__).resolve().parent / "out", help="where the scene graphs are written")
     args = ap.parse_args()
 
-    plan = planner.Planner(args.model, args.base_url)
+    plan = planner.Planner(args.model, args.base_url, prompt=args.prompt)
+    print(f"model: {plan.model}   planner prompt: {plan.prompt_name}")
     args.graphs.mkdir(exist_ok=True)
     results, t0 = [], time.time()
     with args.out.with_suffix(".log.jsonl").open("w") as log_file:
