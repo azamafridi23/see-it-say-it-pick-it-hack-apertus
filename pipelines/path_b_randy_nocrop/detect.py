@@ -1,9 +1,6 @@
 """Apertus finds the objects: one call on the whole photo boxes every
 object of the known kinds. Each box becomes one mark; its corrected
 centre is the target pixel.
-
-`box_names` is the older use of the same boxes: naming OpenCV marks
-(`--opencv-marks`).
 """
 import paths  # noqa: F401
 from apertus import ask
@@ -40,12 +37,6 @@ MAX_BOX_AREA = 0.25
 # error from 103 to 18 px; x is right as given (17 px).
 BOX_Y_SCALE = 1.065
 BOX_Y_SHIFT = 40
-
-# Naming OpenCV marks (box_marks off): a mark counts as inside a box grown
-# by this share of the box's size on every side.
-BOX_MARGIN = 0.15
-
-UNLISTED = "unlisted"
 
 
 def find_boxes(model, rgb):
@@ -94,24 +85,3 @@ def objects(model, scene):
                       "outline": [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]})
 
     return marks
-
-
-def _holds(box, pixel):
-    x1, y1, x2, y2 = box
-    mx, my = BOX_MARGIN * (x2 - x1), BOX_MARGIN * (y2 - y1)
-    u, v = pixel
-    return x1 - mx <= u <= x2 + mx and y1 - my <= v <= y2 + my
-
-
-def _area(found):
-    x1, y1, x2, y2 = found["box"]
-    return (x2 - x1) * (y2 - y1)
-
-
-def box_names(model, scene, marks):
-    """Name each mark by the smallest Apertus box that holds its pixel,
-    from one call on the whole photo; a mark in no box is unlisted."""
-    boxes = find_boxes(model, scene.rgb)
-    for m in marks:
-        holding = [b for b in boxes if _holds(b["box"], m["pixel"])]
-        m["name"] = min(holding, key=_area)["kind"] if holding else UNLISTED

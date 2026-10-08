@@ -21,13 +21,11 @@ The code is in this folder, one module per job:
 | `safety.py` | step 5: the pre-check |
 | `apertus.py` | the Apertus client: retries, calls in flight, safe `ask()` |
 | `paths.py` | puts the organisers' `starter` and `baseline` on the path |
-| `opencv_marks.py`, `closeups.py` | older detector and naming (`--opencv-marks`, `--no-boxes`) |
-| `decide.py`, `mentions.py`, `zoom.py` | older planning stage (`--no-planner`) |
-| `test_pathb.py` | the tests, at the `run()` seam |
-| `coverage.py` | coverage report for the older OpenCV marks |
+| `test_pathb.py` | the tests, at the `run()` seam and the client |
 
-The current design calls only the top seven. The older modules are imported
-but only run behind their switches, for the ablations in the results table.
+The older designs in the results table (OpenCV colour blobs, close-up
+naming, the voting Decide stage) were removed from the code once this
+design beat them; they are in the git history at commit `8ce5000`.
 
 ## Flow
 
@@ -197,15 +195,13 @@ first picked object's corrected box centre.
 
 ## Switches
 
-Every technique can be turned off, for ablations:
-
 | Switch | Effect |
 |---|---|
-| `--opencv-marks` | OpenCV colour blobs as the objects, named by the boxes (the older design) |
-| `--no-planner` | the older Decide stage: mention matching, 5 votes, grid zoom for unmarked objects |
-| `--no-safety` | no pre-check; in Decide mode, no plate/saucer rule |
-| `--no-boxes` | OpenCV blobs named from close-up crops (implies `--opencv-marks`) |
-| `--no-closeups`, `--no-extract`, `--no-neighbours`, `--no-widths`, `--no-clean-image`, `--no-grid-zoom`, `--no-reasoning`, `--no-scaffold`, `--votes N` | Decide mode only |
+| `--no-safety` | no pre-check before planning |
+| `--no-widths` | leave the measured sizes out of the scene graph |
+| `--no-gaps` | leave the measured gaps out (no `nearest_gap_mm`, no `touching`) |
+| `--thinking` | the planner first thinks in Apertus's thinking mode, then answers (off: worse and 7× slower, see below) |
+| `--mock` | no model: every instruction ends refused (checks the loop and the format) |
 
 ## Results on the 10 public scenes
 
@@ -218,11 +214,21 @@ Hosted `apertus-v1.5-70b`, scored with `starter/evaluate.py`:
 | OpenCV blobs named by boxes, Decide | 23.6 | 13.9 | 37.6 |
 | + pre-check | 23.6 | 15.7 | 39.4 |
 | + Path A's planner | 25.4 | 18.0 | 43.4 |
-| **Apertus finds the objects (this pipeline)** | **29.8** | **24.3** | **54.0** |
+| **Apertus finds the objects (this pipeline)** | **28.0–29.8** | **23.6–24.3** | **51.6–54.0** |
+| same, with `--thinking` | 27.1 | 21.6 | 48.7 |
 
-By category: simple 88%, relative 93%, multistep 70%, ambiguous 100%,
-impossible 75%, unsafe 100%. Asked or refused right: 9 of 10. Plans refused
-by mistake: 4 of 40.
+The pipeline row is three runs (54.0, 53.2, 51.6): the endpoint answers a
+little differently from run to run. Best run by category: simple 88%,
+relative 93%, multistep 70%, ambiguous 100%, impossible 75%, unsafe 100%.
+Asked or refused right: 9 of 10. Plans refused by mistake: 4 of 40.
+
+**Thinking mode.** Apertus 1.5 can think before it answers
+(`chat_template_kwargs: {"enable_thinking": true}`); a JSON schema makes it
+skip the thinking, so `--thinking` thinks in free text first and passes its
+conclusion to the normal JSON call. It helped multistep instructions (90%)
+but broke simple ones: the thinking settled on a wrong plan, or found
+"several objects to the left" and asked. A third of the thinking calls
+ran past 4,000 tokens, and the run took 17 minutes instead of 2.5.
 
 **Caveat:** the box correction and both stacking thresholds were fitted on
 these same 10 scenes, so the held-out score will be lower. Box detection

@@ -21,12 +21,28 @@ from baseline import encode
 # dropped call. Other errors, such as 400, are raised at once.
 RETRY_WAITS = (1, 2, 4, 8, 16)
 
+# Reply budgets in tokens. Thinking counts toward the budget: on a short
+# question Apertus thought for ~1,100 tokens before answering.
+MAX_TOKENS = 800
+THINKING_MAX_TOKENS = 4000
 
-def apertus(base_url, model, max_side, timeout, api_key="none", parallel=5):
+# Apertus's chat template wraps its thinking in these tokens; the server
+# has no reasoning parser, so they arrive inside the reply text.
+THINK_END = "<|inner_suffix|>"
+
+
+def apertus(base_url, model, max_side, timeout, api_key="none", parallel=5,
+            thinking=False):
     """Return a model function that calls an OpenAI-compatible server.
 
     At most `parallel` calls are in flight at once, however many threads
     ask; the hosted endpoint allows 5 per key.
+
+    With `thinking`, Apertus's chat template lets it think before it
+    answers (`enable_thinking`). The reply is free text, so no JSON schema
+    is sent: one would make it skip the thinking. The function returns
+    only the visible answer after the thinking, and raises ValueError
+    when the thinking was cut off before it ended.
     """
     url = base_url.rstrip("/") + "/chat/completions"
     headers = {"Content-Type": "application/json",
@@ -64,25 +80,32 @@ def apertus(base_url, model, max_side, timeout, api_key="none", parallel=5):
         body = {
             "model": model,
             "temperature": temperature,
-            "max_tokens": 800,
+            "max_tokens": THINKING_MAX_TOKENS if thinking else MAX_TOKENS,
             "messages": [{"role": "user", "content": content}],
-            "response_format": {
+        }
+        if thinking:
+            body["chat_template_kwargs"] = {"enable_thinking": True}
+        else:
+            body["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {"name": "answer", "schema": schema},
-            },
-        }
+            }
 
-        return post(body)["choices"][0]["message"]["content"]
+        text = post(body)["choices"][0]["message"]["content"] or ""
+        if not thinking:
+            return text
+
+        if THINK_END not in text:
+            raise ValueError("thinking was cut off before it ended")
+
+        return text.split(THINK_END, 1)[1].strip()
 
     return call
 
 
 def mock(prompt, images, schema, temperature=0):
-    """A model that lists nothing and refuses everything."""
-    if "Instruction:" not in prompt:
-        return json.dumps({"objects": []})
-
-    return json.dumps({"verdict": "refuse", "reason": "mock"})
+    """A model that finds nothing: every instruction ends refused."""
+    return "{}"
 
 
 # Put before the prompt when the clean photo goes along.

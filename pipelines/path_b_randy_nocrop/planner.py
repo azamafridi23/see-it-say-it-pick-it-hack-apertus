@@ -13,6 +13,20 @@ import json
 
 MAX_RETRIES = 2
 
+# With thinking: Apertus first thinks the task through in free text, then
+# its conclusion goes into the JSON call.
+THINK_NOTE = """
+
+Think it through first. Then write your decision and, for a plan, the \
+moves in order, in plain words with the ids."""
+
+REASONED_NOTE = """
+
+YOUR REASONING
+{notes}
+
+Give the answer as JSON, following your reasoning."""
+
 # Touching a hand: a gap to a hand mark at most this many cm.
 HAND_GAP_CM = 0.3
 
@@ -135,8 +149,7 @@ def scene_graph(marks, black_x):
     are used when present. A mark right of `black_x` (the black mat's
     left edge, px) is on the black tray, any other in the grey tray.
     """
-    types = [m.get("name", "unlisted") for m in marks]
-    types = ["object" if t == "unlisted" else t for t in types]
+    types = [m["name"] for m in marks]
     ids = []
     for m, t in zip(marks, types):
         base = t.replace(" ", "_")
@@ -309,15 +322,27 @@ def to_answer(iid, reply, graph):
             "actions": actions}
 
 
-def plan(ask, iid, text, graph):
+def plan(ask, iid, text, graph, think=None):
     """Return (answer, log). `ask(prompt, schema)` returns the reply text.
 
-    A reply that breaks a rule goes back with the error, up to
-    MAX_RETRIES times; then the answer is a refusal.
+    With `think(prompt)`, Apertus first thinks the task through in free
+    text, and its conclusion goes along into the first JSON call; an
+    empty thought (a failed call) is left out. A reply that breaks a rule
+    goes back with the error, up to MAX_RETRIES times, without the
+    thinking: a wrong conclusion would anchor every retry. Then the
+    answer is a refusal.
     """
-    prompt = (f"{SYSTEM}\n\nSCENE\n{json.dumps(describe(graph))}\n\n"
-              f"INSTRUCTION\n{text}")
+    base = (f"{SYSTEM}\n\nSCENE\n{json.dumps(describe(graph))}\n\n"
+            f"INSTRUCTION\n{text}")
+    prompt = base
     log = {"instruction_id": iid, "instruction": text, "attempts": []}
+    if think:
+        notes = think(base + THINK_NOTE)
+        log["thinking"] = notes
+        if notes:
+            prompt = base + REASONED_NOTE.format(notes=notes)
+
+    retries = ""
     for _ in range(MAX_RETRIES + 1):
         reply_text = ask(prompt, schema(graph))
         try:
@@ -335,8 +360,9 @@ def plan(ask, iid, text, graph):
         if error is None:
             return to_answer(iid, reply, graph), log
 
-        prompt += (f"\n\nYOUR ANSWER\n{reply_text}\n\nThat answer cannot "
-                   f"be used. {error}\nGive a corrected answer.")
+        retries += (f"\n\nYOUR ANSWER\n{reply_text}\n\nThat answer cannot "
+                    f"be used. {error}\nGive a corrected answer.")
+        prompt = base + retries
 
     log["gave_up"] = True
     return ({"instruction_id": iid, "target_pixel": None,

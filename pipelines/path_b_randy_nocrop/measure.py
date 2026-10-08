@@ -13,24 +13,13 @@ import paths  # noqa: F401
 from scene_io import pixel_to_table
 
 
-# White/grey parts: bright and unsaturated, on the dark table (V ~60).
-PALE_SAT, PALE_VAL = 50, 130
-
-# The gripper opens at most this wide (calibration.json).
-GRIPPER_MM = 85
-# Widths are measured on the table plane, so tall or stacked objects
-# read up to ~15 % wide (dev mugs 85-87 mm, a stacked cube 86 mm, all
-# grippable). Only objects 30 % over the gripper are called too wide:
-# dev saucers measure ~120 mm, plates ~180 mm.
-TOO_WIDE_MM = 1.3 * GRIPPER_MM
-# How many nearest other marks each mark line lists.
-NEIGHBOURS = 3
+# Below this saturation an object is white or grey, not a hue.
+PALE_SAT = 50
 
 # Colour words from the measured hue (OpenCV 0..180). The yellow/green
 # edge sits between the yellow gears (23-29) and the lime mug inside (37).
 COLOUR_HUES = (("red", 6), ("orange", 15), ("yellow", 33), ("green", 85),
                ("blue", 130), ("purple", 170))
-COLOURS = [name for name, _ in COLOUR_HUES] + ["white", "grey", "black"]
 
 # Two boxes overlapping by this share of the smaller one may be a stack
 # (dev stacks 0.46-0.91, neighbours side by side up to 0.33); the one
@@ -60,13 +49,9 @@ def black_mat_x(rgb):
 
 
 def width_mm(scene, mark):
-    """Return the mark's minimum width in mm, measured on the table.
-
-    The width is the diameter of the object's largest inscribed circle;
-    for round and box-shaped objects that is the span the gripper needs.
-    Tall or stacked objects read up to ~15 % wide: they are nearer the
-    camera than the table (see TOO_WIDE_MM).
-    """
+    """Return the mark's width in mm, measured on the table: its box's
+    shorter side (twice the mark's radius). Tall objects read up to ~15 %
+    wide: they are nearer the camera than the table."""
     (u, v), r = mark["pixel"], mark["radius"]
     left = pixel_to_table(scene, u - r, v)
     right = pixel_to_table(scene, u + r, v)
@@ -95,25 +80,12 @@ def gap_cm(scene, a, b):
     return round(float(best * np.linalg.norm(step)) / 10, 1)
 
 
-def add_neighbours(scene, marks):
-    """Give each mark its gaps to the others and what it lies on.
-
-    `gaps`: {mark id: cm} to every other mark, between outlines on the
-    table. `nearest`: the NEIGHBOURS smallest, [[mark id, cm], ...].
-    `on`: the marks whose outline holds this mark's centre, e.g. the
-    yellow gear lies on a red gear.
-    """
+def add_gaps(scene, marks):
+    """Give each mark `gaps`: {mark id: cm} to every other mark, edge to
+    edge on the table."""
     for m in marks:
         m["gaps"] = {o["id"]: gap_cm(scene, m, o) for o in marks
                      if o is not m}
-        ranked = sorted((cm, i) for i, cm in m["gaps"].items())
-        m["nearest"] = [[i, cm] for cm, i in ranked[:NEIGHBOURS]]
-
-        centre = (float(m["pixel"][0]), float(m["pixel"][1]))
-        m["on"] = [o["id"] for o in marks if o is not m
-                   and cv2.pointPolygonTest(
-                       np.array(o["outline"], np.int32).reshape(-1, 1, 2),
-                       centre, False) > 0]
 
 
 def _box_mask(shape, mark):
