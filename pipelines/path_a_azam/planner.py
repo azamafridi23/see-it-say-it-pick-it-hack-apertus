@@ -5,7 +5,7 @@ Apertus chooses objects by their id and never writes coordinates: target_pixel i
 scene graph. Its reply is constrained to a JSON schema, checked by code against the scene graph,
 and sent back with the error when it breaks a rule (see check()).
 
-The rules Apertus is given are a text file in prompts/ (default: planner_v1). Add planner_v2.txt and so on to try
+The rules Apertus is given are a text file in prompts/ (default: planner_v2). Add new versions to try
 other wordings; the version used is written to the log with every answer.
 
     from planner import Planner
@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import json, os, time
 from pathlib import Path
+
+from planning import check
 
 from dotenv import load_dotenv
 from openai import APIConnectionError, APITimeoutError, InternalServerError, OpenAI, RateLimitError
@@ -26,7 +28,7 @@ BASE_URL = "https://hackapertus.livemap.sh/v1"
 MAX_RETRIES = 2
 
 PROMPTS = Path(__file__).resolve().parent / "prompts"
-DEFAULT_PROMPT = "planner_v1"
+DEFAULT_PROMPT = "planner_v2"
 
 
 def load_prompt(name: str = DEFAULT_PROMPT) -> tuple[str, str]:
@@ -84,42 +86,6 @@ def describe(graph: dict) -> dict:
         objs.append(d)
     return {"gripper_max_opening_mm": graph["gripper_max_opening_mm"], "hand_present": graph["hand_present"],
             "left_to_right": graph["left_to_right"], "top_to_bottom": graph["top_to_bottom"], "objects": objs}
-
-
-def check(reply: dict, graph: dict) -> str | None:
-    """None when the reply is usable, else what is wrong with it, worded for Apertus to correct."""
-    objs = {o["id"]: o for o in graph["objects"]}
-    decision, moves, message = reply.get("decision"), reply.get("moves") or [], (reply.get("message") or "").strip()
-    if decision in ("ask_user", "refuse"):
-        return None if message else f'decision "{decision}" needs a message.'
-    if decision != "plan":
-        return 'decision must be "plan", "ask_user" or "refuse".'
-    if not moves:
-        return 'A plan needs at least one move. If nothing can be done, decide "refuse" or "ask_user".'
-    moved = set()
-    for n, m in enumerate(moves, 1):
-        oid, to = m.get("object"), m.get("to")
-        if oid not in objs or (to is not None and to not in objs):
-            return (f'Move {n}: there is no object "{oid if oid not in objs else to}". The ids are: {", ".join(objs)}. '
-                    f'If the instruction names something that is not on the table, decide "refuse".')
-        o = objs[oid]
-        if not o["pickable"]:
-            return (f'Move {n}: {oid} cannot be picked up: {o.get("why_not_pickable") or "pickable is false"}. '
-                    f'If the instruction needs that, decide "refuse" and give this as the reason.')
-        if o.get("touching_hand"):
-            return f'Move {n}: a person\'s hand is on {oid}. The robot must not move it: decide "refuse".'
-        blocking = [c for c in o.get("covered_by", []) if c not in moved]
-        if blocking:
-            return (f"Move {n}: {oid} is covered by {', '.join(blocking)}. Move {', '.join(blocking)} aside first, "
-                    f'or decide "refuse" if the instruction does not allow that.')
-        if to == oid:
-            return f'Move {n}: "to" is where {oid} is put down, not the object itself. Give the id of a tray, plate or saucer.'
-        if to is None and n < len(moves):
-            return f'Move {n}: {oid} is still in the gripper ("to" is null). Put it down before the next move.'
-        if to is not None and objs[to].get("label") == "hand":
-            return f'Move {n}: the robot must not hand objects to a person: decide "refuse".'
-        moved.add(oid)
-    return None
 
 
 def to_answer(instruction_id: str, reply: dict, graph: dict) -> dict:

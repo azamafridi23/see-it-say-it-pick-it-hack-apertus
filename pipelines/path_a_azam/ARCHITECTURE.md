@@ -1,5 +1,10 @@
 # Architecture
 
+The graph planner now defaults to **v3 prompts and validated agent replies**. See
+[MULTI_AGENT.md](MULTI_AGENT.md#current-v3-behavior) for the current uncertainty policy, shared
+stateful planner/checker, and evaluation commands. Scores and transcripts below are historical;
+the revised code has not yet been scored with live Apertus calls.
+
 How our pipeline turns one photo and one sentence into a robot action. Every example below is
 real output from the ten public scenes.
 
@@ -60,7 +65,9 @@ Apertus does all the language reasoning. SAM 3 and the depth model only see.
 | `scene_graph.py` | Builds the scene graph from the detections |
 | `planner.py` | Asks Apertus for the answer, checks it, retries, converts to the challenge format |
 | `agents.py` | The multi-agent planner: three Apertus agents in a fixed LangGraph graph (`--planner graph`) |
-| `prompts/` | The rules given to Apertus, one text file per version; `--prompt` picks one, `planner_v1` is the default |
+| `prompts/` | The rules given to Apertus; `--prompt` selects the single-call prompt (default `planner_v2`), and graph-agent flags select v3 overrides |
+| `planning.py` | Shared symbolic state, confirmed blocker ordering, and uncertainty-aware plan validation |
+| `agent_contracts.py` | Agent schemas and local response validation |
 | `dev/check_graph.py` | Development only: compares scene graphs with the ground-truth masks |
 | `dev/ablate.py` | Development only: hides prompts to test how unknown objects are found |
 | `dev/try_prompts.py` | Development only: compares prompt wordings on one scene |
@@ -419,8 +426,9 @@ Both are reasoning errors by Apertus. The scene graph was correct in both cases.
 - **Tuned on the public scenes.** The prompt wording, the rules given to Apertus and about a dozen
   thresholds were all chosen while looking at these ten photos. Some margins are thin: the 12%
   overlap line sits between a true stack at 17% and a non-stack at 6%.
-- **`maybe_on` is not resolved.** In scene 09 the graph says the mandarin may be on two gears. No
-  step decides these yet; Apertus is only told to treat them with care.
+- **`maybe_on` is not resolved by perception.** In scene 09 the graph says the mandarin may be on
+  two gears. The current planner asks when an uncertain relation affects a required pick; it does
+  not automatically promote it to confirmed support. This can lower scores on valid instructions.
 - **Hidden shapes of non-round objects cannot be measured.** A cube hiding one end of a flat
   bracket is only caught by the depth check, as a "maybe".
 - **A fully hidden object is invisible.** Nothing in the photo says it exists.

@@ -1,13 +1,78 @@
 # The multi-agent planner
 
 How `--planner graph` turns a scene graph and one instruction into an answer, using three Apertus
-agents wired together with LangGraph. Every example below is real output from the public scenes.
+agents wired together with LangGraph.
 
 It replaces only the last stage of the pipeline. Finding the objects and building the scene graph
 are unchanged and described in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-**Result on the public scenes:** 64.1 of 65 script points on two runs out of two. The single-call
-planner scores between 58.9 and 60.5.
+**Current version: v3. Live Apertus accuracy has not yet been measured.** The 64.1/65 results and
+agent transcripts in the historical sections below belong to v2, not to these changes.
+
+## Current v3 behavior
+
+- Prompts use short decision rules and 20 complete JSON demonstrations, including public examples
+  and constructed contrasts. The safety agent distinguishes a requested action from a negated one;
+  the reference agent filters candidates before ranking; the constraint agent distinguishes
+  original-location restrictions from leaving an object at its new destination.
+- Each agent's output is validated locally against its schema and cross-field requirements. An
+  invalid, missing, or truncated reply gets at most two corrections. Persistent failure stops the
+  graph with `gave_up: true` and a refusal explicitly describing a system failure. No later agent
+  treats a failed check as approval. Service errors also stop the plan after transport retries.
+- Constraints receive the scene and ordered moves. The reply is `clear`, `conflict`, or `uncertain`,
+  with a separate `{object, quote}` record per conflict. Every object must be in the move list and
+  every quote must occur exactly in the instruction. The model still resolves what the quote means;
+  substring validation does not prove semantic correctness. Unresolved restrictions produce a question.
+- `planning.py` is shared by ordering and validation. Confirmed support creates dependencies;
+  `maybe_on` remains uncertain. Moving a potentially supported lower object triggers clarification,
+  while an unrelated action or an explicit move of the upper object can proceed. There is no new
+  vision resolver in this change. This policy may ask on valid public instructions and lower scores
+  until perception can resolve the relation, notably scene_09.
+- State changes are applied after every move. Parking a blocker at its requested destination avoids
+  picking it again; placing it back onto another object creates a new dependency. Cyclic support,
+  conflicting destinations, and multiple pick-and-hold goals are handled explicitly. A single
+  pick-and-hold goal runs last. Requested final placements cannot silently be undone by clearing a
+  later target. The symbolic state does not certify free placement pixels, fit, or collision clearance.
+- The reference prompt asks for clarification for restoration/exact-position goals outside the
+  task schema. It returns named goals even if already at their destination; there is no challenge
+  no-op result. Semantic goal coverage remains a model limitation, not a guarantee from the checker.
+- Prompt names are configurable and prompt hashes are logged. The v3 constraint schema is not
+  compatible with `agent_constraint_v2`; old prompts remain for historical inspection.
+
+### Run and test
+
+```bash
+python pipelines/path_a_azam/run.py --data dataset --out results/agents_v3.json --planner graph
+python -m unittest discover -s pipelines/path_a_azam -p 'test_*.py' -v
+```
+
+Tests use mocked model replies and synthetic graphs, without network calls or model weights. For
+planner-only work, install `openai==3.24.0 langgraph==1.2.14 python-dotenv==1.2.4 'jsonschema>=4.23,<5'`.
+
+Freeze perception inputs before comparing prompts:
+
+```bash
+python pipelines/path_a_azam/dev/replay_agents.py \
+  --graphs pipelines/path_a_azam/out --data dataset --dry-run
+python pipelines/path_a_azam/dev/replay_agents.py \
+  --graphs pipelines/path_a_azam/out --data dataset --out results/agents_v3.json
+python pipelines/path_a_azam/dev/replay_agents.py \
+  --graphs pipelines/path_a_azam/out --data dataset --out results/safety_ablation.json \
+  --safety-prompt agent_safety_v2
+python starter/evaluate.py results/agents_v3.json --data dataset
+```
+
+Both entry points accept `--safety-prompt`, `--reference-prompt`, and `--constraint-prompt` (name or
+file path). Replacement prompts must follow the current schemas. Graph replay reads only saved
+scene graphs and instruction text, never ground truth or image models. Logs include graph hashes,
+prompt hashes, attempts, and elapsed time. Use the original revision for an exact v2 baseline;
+selecting one v2 prompt in this revision tests wording under the new code, not the old architecture.
+
+Compare one agent at a time, repeat runs, and inspect first picks, incorrect questions/refusals,
+extra moves, and reasons alongside the official score. Keep fresh paraphrases and synthetic graphs
+separate from prompt demonstrations. No new public-score claim is made without those model runs.
+
+## Historical v2 design and results
 
 ---
 

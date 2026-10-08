@@ -5,7 +5,7 @@
     python starter/evaluate.py results/path_a_azam.json --data dataset
 
     --prompt planner_v2    try another version of the rules given to Apertus (files in prompts/)
-    --planner graph        three Apertus agents (safety, reference, planning) instead of one call
+    --planner graph        three Apertus agents (safety, reference, constraints) instead of one call
 
 Per photo:        SAM 3 finds the objects, Apertus names what it sees, code builds the scene graph (scene_graph.py).
 Per instruction:  Apertus reads the scene graph and the instruction and answers; code checks the answer (planner.py).
@@ -20,13 +20,6 @@ import argparse, json, sys, time
 from pathlib import Path
 
 import planner
-from apertus_list import names_for
-from run_sam3 import detect
-from scene_graph import build, render, scene_dirs
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "starter"))
-from evaluate import answer_type  # noqa: E402
-from scene_io import load_scene  # noqa: E402
 
 
 def main():
@@ -37,6 +30,9 @@ def main():
     ap.add_argument("--base-url", default=planner.BASE_URL)
     ap.add_argument("--prompt", default=planner.DEFAULT_PROMPT,
                     help=f"planner prompt: a name in prompts/ or a path to a text file (default: {planner.DEFAULT_PROMPT})")
+    ap.add_argument("--safety-prompt", help="graph planner safety prompt name or file")
+    ap.add_argument("--reference-prompt", help="graph planner reference prompt name or file")
+    ap.add_argument("--constraint-prompt", help="graph planner constraint prompt name or file (v3 schema)")
     ap.add_argument("--planner", choices=["single", "graph"], default="single",
                     help="single: one Apertus call decides everything (planner.py). "
                          "graph: three Apertus agents in a fixed LangGraph graph (agents.py)")
@@ -45,9 +41,21 @@ def main():
     ap.add_argument("--graphs", type=Path, default=Path(__file__).resolve().parent / "out", help="where the scene graphs are written")
     args = ap.parse_args()
 
+    if args.planner != "graph" and any((args.safety_prompt, args.reference_prompt, args.constraint_prompt)):
+        ap.error("Agent prompt overrides require --planner graph.")
+
+    from apertus_list import names_for
+    from run_sam3 import detect
+    from scene_graph import build, render, scene_dirs
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "starter"))
+    from evaluate import answer_type
+    from scene_io import load_scene
+
     if args.planner == "graph":
         from agents import GraphPlanner  # only needed, with LangGraph, for this choice
-        plan = GraphPlanner(args.model, args.base_url)
+        overrides = {role: value for role in ("safety", "reference", "constraint")
+                     if (value := getattr(args, f"{role}_prompt")) is not None}
+        plan = GraphPlanner(args.model, args.base_url, prompt_names=overrides)
     else:
         plan = planner.Planner(args.model, args.base_url, prompt=args.prompt)
     print(f"model: {plan.model}   planner: {args.planner}   prompt: {plan.prompt_name}")
