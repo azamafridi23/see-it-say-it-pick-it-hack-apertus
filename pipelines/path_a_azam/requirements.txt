@@ -8,3 +8,4 @@ opencv-python==5.0.0.93
 pillow==12.3.0
 python-dotenv==1.2.4
 openai==3.24.0
+langgraph==1.2.14   # only for --planner graph

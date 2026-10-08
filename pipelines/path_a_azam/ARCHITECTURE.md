@@ -59,6 +59,7 @@ Apertus does all the language reasoning. SAM 3 and the depth model only see.
 | `apertus_list.py` | Asks Apertus to list the objects in a photo |
 | `scene_graph.py` | Builds the scene graph from the detections |
 | `planner.py` | Asks Apertus for the answer, checks it, retries, converts to the challenge format |
+| `agents.py` | The multi-agent planner: three Apertus agents in a fixed LangGraph graph (`--planner graph`) |
 | `prompts/` | The rules given to Apertus, one text file per version; `--prompt` picks one, `planner_v1` is the default |
 | `dev/check_graph.py` | Development only: compares scene graphs with the ground-truth masks |
 | `dev/ablate.py` | Development only: hides prompts to test how unknown objects are found |
@@ -276,6 +277,46 @@ self-contradicting, uncontrolled motion such as throwing or pushing, or a person
 The examples in the prompt use invented objects, not instructions from the dataset.
 
 ---
+
+## 7b. The multi-agent planner (`--planner graph`)
+
+An alternative to the single call above, in `agents.py`. Described in full, with examples, in
+[MULTI_AGENT.md](MULTI_AGENT.md). Three Apertus agents each do one narrow job, wired as a
+fixed LangGraph graph. No agent decides which agent runs next: the route is in code.
+
+```
+instruction + scene graph
+   -> safety agent       is the movement asked for allowed?               -> refuse
+   -> reference agent    which objects does the sentence mean?            -> refuse (not there) / ask_user (unclear)
+   -> order the moves    code: lift off what covers an object first       -> refuse (not pickable, a hand is on it)
+   -> constraint agent   does the instruction forbid moving one of these? -> refuse
+   -> answer
+```
+
+| Step | Sees | Decides |
+|---|---|---|
+| Safety agent | Only the instruction's words | Is it an uncontrolled movement (throw, push, pull out from under) or reaching into a person? |
+| Reference agent | The instruction and the scene description, plus each object's nearest neighbour in every direction and the gap to every other object | Which ids are meant and where they go; or that the object is not there; or that it is unclear |
+| Order the moves | The chosen objects and what covers what | Code, not an agent: whatever lies on an object is lifted aside first, into the tray it is already in |
+| Constraint agent | The instruction and the list of objects that will be moved | Does the instruction say in so many words that one of them must not be moved? Believed only if the words it quotes are really in the instruction |
+
+What we learned building it, in three rounds on the public scenes:
+
+| Round | Score (two runs) | What was wrong |
+|---|---|---|
+| 1. Three agents: safety, reference, planning | 45.0 and 40.3 | Told a hand was in the scene, the safety agent refused everything in scene 10. The planning agent misread relations ("in the black tray" as "covered by the black tray"). The reference agent could not do "left of" or "farthest from". |
+| 2. Safety reads only the words; ordering is code; neighbours and all gaps given; a constraint agent judges the plan | 54.9 and 54.9 | The constraint agent rejected four correct plans, reading "under the yellow gear" as a goal the plan missed. |
+| 3. The constraint agent asks one question and must quote the instruction | 64.1 and 64.1 | Only the near tie in scene 10 (two gears 16 and 17 mm from the mandarin). |
+
+The pattern in all three rounds: an agent does well when it is given one question and only the facts for that
+question, and badly when given a judgement to make or facts it does not need.
+
+Compared with the single call: about three Apertus calls per instruction instead of one (about six minutes for
+the public set instead of four), the same answers on both runs where the single call varied by up to four points,
+and plans that are always in the simplest order because code writes them.
+
+**These prompts were revised three times while looking at the public answers**, so 64.1 overstates what to expect
+on the held-out scenes.
 
 ## 8. Stage 5: the checker
 

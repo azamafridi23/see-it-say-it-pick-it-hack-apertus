@@ -5,6 +5,7 @@
     python starter/evaluate.py results/path_a_azam.json --data dataset
 
     --prompt planner_v2    try another version of the rules given to Apertus (files in prompts/)
+    --planner graph        three Apertus agents (safety, reference, planning) instead of one call
 
 Per photo:        SAM 3 finds the objects, Apertus names what it sees, code builds the scene graph (scene_graph.py).
 Per instruction:  Apertus reads the scene graph and the instruction and answers; code checks the answer (planner.py).
@@ -36,13 +37,20 @@ def main():
     ap.add_argument("--base-url", default=planner.BASE_URL)
     ap.add_argument("--prompt", default=planner.DEFAULT_PROMPT,
                     help=f"planner prompt: a name in prompts/ or a path to a text file (default: {planner.DEFAULT_PROMPT})")
+    ap.add_argument("--planner", choices=["single", "graph"], default="single",
+                    help="single: one Apertus call decides everything (planner.py). "
+                         "graph: three Apertus agents in a fixed LangGraph graph (agents.py)")
     ap.add_argument("--team", default="team")
     ap.add_argument("--no-apertus-vision", action="store_true", help="do not ask Apertus to name the objects it sees")
     ap.add_argument("--graphs", type=Path, default=Path(__file__).resolve().parent / "out", help="where the scene graphs are written")
     args = ap.parse_args()
 
-    plan = planner.Planner(args.model, args.base_url, prompt=args.prompt)
-    print(f"model: {plan.model}   planner prompt: {plan.prompt_name}")
+    if args.planner == "graph":
+        from agents import GraphPlanner  # only needed, with LangGraph, for this choice
+        plan = GraphPlanner(args.model, args.base_url)
+    else:
+        plan = planner.Planner(args.model, args.base_url, prompt=args.prompt)
+    print(f"model: {plan.model}   planner: {args.planner}   prompt: {plan.prompt_name}")
     args.graphs.mkdir(exist_ok=True)
     results, t0 = [], time.time()
     with args.out.with_suffix(".log.jsonl").open("w") as log_file:
@@ -56,7 +64,7 @@ def main():
                 kind, err = answer_type(answer)
                 results.append(answer)
                 log_file.write(json.dumps({**log, "answer": answer}) + "\n")
-                tries = len(log["attempts"])
+                tries = sum("agent" not in a for a in log["attempts"])  # corrections by the single-call planner
                 shown = ", ".join(f"{a['action']}({a['object']})" for a in answer["actions"]) if kind == "plan" \
                     else f"{kind}: {answer['actions'][0].get('question') or answer['actions'][0].get('reason')}" if kind \
                     else f"INVALID ({err})"

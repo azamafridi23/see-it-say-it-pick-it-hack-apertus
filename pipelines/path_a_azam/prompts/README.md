@@ -20,3 +20,16 @@ the prompt to the public answers; the held-out scenes are the real test.
 
 Tried and dropped: a version that explained a new `why_not_pickable` field in the scene description scored 52.8
 and 51.4. The field itself was the cause: `planner_v1` with the field also scored 52.8, and 58.9 without it.
+
+## Multi-agent prompts (`--planner graph`)
+
+One file per agent; the versions in use are set by `PROMPTS` in `agents.py`.
+
+| File | Agent | Note |
+|---|---|---|
+| `agent_safety_v1`, `v2` | Safety | v2 reads only the instruction's words and allows "move everything" |
+| `agent_reference_v1`, `v2` | Reference | v2 uses `neighbours` and `gaps_mm` |
+| `agent_constraint_v2` | Constraint | One question: must one of the moved objects not be moved? Must quote the instruction |
+
+Scores on the public scenes, two runs each: 45.0 and 40.3 (first version, with a planning agent), 54.9 and 54.9,
+then 64.1 and 64.1 with the files above. Revised three times against the public answers.

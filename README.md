@@ -10,11 +10,14 @@ are in [EVALUATION.md](EVALUATION.md).
 
 | Pipeline | Approach | Grounding (35) | Safety (30) | Script total (65) |
 |---|---|---|---|---|
-| `path_a_azam` | SAM 3 + scene graph + Apertus 1.5 (70B) | 34.1 | 26.3 | **60.5** |
+| `path_a_azam`, multi-agent | SAM 3 + scene graph + three Apertus 1.5 (70B) agents | 34.1 | 30.0 | **64.1** |
+| `path_a_azam`, single call | SAM 3 + scene graph + one Apertus 1.5 (70B) call | 33.2 | 25.6 | **58.9** |
 | `path_a_randy` | to be added | | | |
 | `path_b_wahyu` | Apertus alone, to be added | | | |
 
-The public answers are public, so the held-out scenes are the real test.
+The single call's score varies between runs (58.9 to 60.5); the multi-agent version gave 64.1 on both of its
+runs. The public answers are public, and the multi-agent prompts were tuned on them, so the held-out scenes are
+the real test.
 
 ## How `path_a_azam` works
 
@@ -22,10 +25,19 @@ The public answers are public, so the held-out scenes are the real test.
 2. **Apertus** lists what it sees, so objects outside the fixed prompt list are found too.
 3. **Code** builds a scene graph: each object's position, size, and what lies on what.
 4. **Apertus** reads the scene graph and the instruction and decides: plan, ask, or refuse.
-5. **Code** checks the answer against the scene graph and asks Apertus to correct it if needed.
+5. **Code** checks the answer against the scene graph.
+
+Step 4 comes in two versions:
+
+- **Single call** (the default): one Apertus call decides everything, and is asked to correct itself if the
+  check fails.
+- **Multi-agent** (`--planner graph`): three Apertus agents in a fixed LangGraph graph. A safety agent judges
+  the movement, a reference agent works out which objects are meant, code orders the moves, and a constraint
+  agent checks whether the instruction forbids any of them.
 
 Apertus chooses the object; the pixel always comes from SAM 3. Details:
-[pipelines/path_a_azam/ARCHITECTURE.md](pipelines/path_a_azam/ARCHITECTURE.md).
+[ARCHITECTURE.md](pipelines/path_a_azam/ARCHITECTURE.md) for the pipeline and
+[MULTI_AGENT.md](pipelines/path_a_azam/MULTI_AGENT.md) for the multi-agent planner.
 
 ## Setup
 
@@ -48,6 +60,13 @@ Then fill in `.env`:
 ```
 .venv/bin/python pipelines/path_a_azam/run.py --data dataset --out results/path_a_azam.json
 .venv/bin/python starter/evaluate.py results/path_a_azam.json --data dataset
+```
+
+For the multi-agent planner, add `--planner graph`:
+
+```
+.venv/bin/python pipelines/path_a_azam/run.py --data dataset --out results/path_a_azam_graph.json --planner graph
+.venv/bin/python starter/evaluate.py results/path_a_azam_graph.json --data dataset
 ```
 
 `--data` takes any folder of scenes, so the held-out run is the same command with `--data heldout`.
