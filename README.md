@@ -15,9 +15,37 @@ are in [EVALUATION.md](EVALUATION.md).
 | `path_a_randy` | to be added | | | |
 | `path_b_wahyu` | Apertus alone, to be added | | | |
 
-The single call's score varies between runs (58.9 to 60.5); the multi-agent version gave 64.1 on both of its
-runs. The public answers are public, and the multi-agent prompts were tuned on them, so the held-out scenes are
-the real test.
+The multi-agent version gave 64.1 on three runs out of three; the single call varies between 58.9 and 60.5.
+The public answers are public, and the multi-agent prompts were tuned on them, so the held-out scenes are the
+real test.
+
+### Every experiment, by branch
+
+All with Apertus 1.5 70B on the ten public scenes. Each score is one full run of the 50 instructions.
+
+| Branch | What it tried | Scores |
+|---|---|---|
+| `path-a/azam` (merged into `main`) | First pipeline: one Apertus call plans everything | 60.5, 60.5 |
+| `path-a/azam-robustness` | Same planner, plus retry on a busy server, caches keyed by photo content, and a worded reason for unpickable objects | 58.9, 58.9 |
+| `path-a/azam-depth-size` | Pickable decided by measured size, with heights from a depth model. Dropped: the organisers confirmed pickable is a property of the object, not a size rule | 52.2, 56.5 |
+| `path-a/azam-multi-agent` | Three Apertus agents (safety, reference, constraint) in a fixed LangGraph graph, with the moves ordered by code | 64.1, 64.1 |
+| `path-a/azam-multi-agent-prompt-validation` | Reply validation, tests and a replay tool, with new v3 prompts and a policy of asking about uncertain stacking | 53.4, 53.4 |
+| `path-a/azam-multi-agent-combined` | **Current.** The validation, tests and replay tool, with the v2 prompts and the one-question constraint agent | **64.1, 64.1, 64.1** |
+
+Smaller comparisons, run on the combined branch:
+
+| Variation | Scores |
+|---|---|
+| The v3 safety prompt in place of v2 | 62.5, 62.5, 62.5 |
+| The v3 reference prompt in place of v2 | 59.6, 59.6 |
+| Single call with the `planner_v2` prompt in place of `planner_v1` | 58.9 |
+| Single call with a "why not pickable" field added to the scene description | 52.8, 52.8, 51.4 |
+| Multi-agent before two redesigns: with a planning agent, then with a constraint agent judging the whole plan | 45.0, 40.3; then 54.9, 54.9 |
+
+What these runs taught us is written up in
+[MULTI_AGENT.md](pipelines/path_a_azam/MULTI_AGENT.md) and [ARCHITECTURE.md](pipelines/path_a_azam/ARCHITECTURE.md).
+The `path-a/azam-robustness`, `path-a/azam-depth-size` and `path-a/azam-multi-agent-combined` branches may exist
+only on the author's machine until pushed.
 
 ## How `path_a_azam` works
 

@@ -28,7 +28,7 @@ BASE_URL = "https://hackapertus.livemap.sh/v1"
 MAX_RETRIES = 2
 
 PROMPTS = Path(__file__).resolve().parent / "prompts"
-DEFAULT_PROMPT = "planner_v2"
+DEFAULT_PROMPT = "planner_v1"
 
 
 def load_prompt(name: str = DEFAULT_PROMPT) -> tuple[str, str]:

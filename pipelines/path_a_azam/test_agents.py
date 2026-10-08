@@ -64,9 +64,16 @@ class PlanningTests(unittest.TestCase):
         plan = order_moves([task("gear", "gear2", to="black_tray")], graph)
         self.assertEqual([m["object"] for m in plan["moves"]], ["mug", "gear", "gear2"])
 
-    def test_uncertain_support_asks_instead_of_inserting_pick(self):
+    def test_uncertain_support_is_lifted_first_by_default(self):
         graph = scene(stacked=False, uncertain=True)
         plan = order_moves([task("gear")], graph)
+        self.assertEqual(plan["decision"], "plan")
+        self.assertEqual([m["object"] for m in plan["moves"]], ["mug", "gear"])
+        self.assertIsNone(check(plan, graph))
+
+    def test_uncertain_support_asks_under_the_ask_policy(self):
+        graph = scene(stacked=False, uncertain=True)
+        plan = order_moves([task("gear")], graph, uncertain="ask")
         self.assertEqual(plan["decision"], "ask_user")
         self.assertEqual(plan["moves"], [])
         self.assertIn("beside", plan["message"])
@@ -77,9 +84,11 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(plan["moves"], [{"object": "mug", "to": None}])
         self.assertIsNone(check(plan, graph))
 
-    def test_checker_also_rejects_unresolved_lower_pick(self):
+    def test_checker_rejects_unresolved_lower_pick_under_the_ask_policy(self):
         graph = scene(stacked=False, uncertain=True)
-        self.assertIn("resting", check({"decision": "plan", "moves": [{"object": "gear", "to": None}], "message": ""}, graph))
+        plan = {"decision": "plan", "moves": [{"object": "gear", "to": None}], "message": ""}
+        self.assertIn("resting", check(plan, graph, uncertain="ask"))
+        self.assertIsNone(check(plan, graph))   # default: the single-call planner decides about maybe_on itself
 
     def test_explicit_upper_move_clears_uncertainty(self):
         graph = scene(stacked=False, uncertain=True)
@@ -230,12 +239,12 @@ class AgentFlowTests(unittest.TestCase):
         self.assertTrue(log["gave_up"])
         self.assertIn("reference check", answer["actions"][0]["reason"])
 
-    def test_constraints_receive_scene_and_ordered_moves(self):
+    def test_constraints_receive_only_the_objects_that_will_move(self):
         _, _, ask = self.run_replies([ALLOW, resolved(task("gear")), CLEAR])
         user = ask.call_args_list[-1].args[0][1]["content"]
-        self.assertIn('"position": [100, 100]', user)
-        self.assertIn('"covered_by": ["mug"]', user)
-        self.assertIn('"object": "mug", "to": "grey_tray"', user)
+        self.assertIn("THE ROBOT WILL MOVE\nmug, gear", user)
+        self.assertNotIn('"position"', user)      # no scene and no plan: with them it judged the plan's goal
+        self.assertNotIn('"to"', user)
 
     def test_verified_constraint_refuses_with_evidence(self):
         reply = {"thinking": "The mug is forbidden to move.", "status": "conflict",
@@ -251,10 +260,16 @@ class AgentFlowTests(unittest.TestCase):
         answer, _, _ = self.run_replies([ALLOW, resolved(task("gear")), reply])
         self.assertEqual(answer["actions"][0]["action"], "ask_user")
 
-    def test_unresolved_support_stops_before_constraint(self):
-        answer, _, ask = self.run_replies([ALLOW, resolved(task("gear"))], graph=scene(stacked=False, uncertain=True))
+    def test_unresolved_support_stops_before_constraint_under_the_ask_policy(self):
+        with patch("planning.UNCERTAIN_SUPPORT", "ask"):
+            answer, _, ask = self.run_replies([ALLOW, resolved(task("gear"))], graph=scene(stacked=False, uncertain=True))
         self.assertEqual(ask.call_count, 2)
         self.assertEqual(answer["actions"][0]["action"], "ask_user")
+
+    def test_unresolved_support_is_lifted_first_in_the_graph(self):
+        answer, _, ask = self.run_replies([ALLOW, resolved(task("gear")), CLEAR], graph=scene(stacked=False, uncertain=True))
+        self.assertEqual(ask.call_count, 3)
+        self.assertEqual([a["object"] for a in answer["actions"] if a["action"] == "pick"], ["mug", "gear"])
 
     def test_truncated_valid_json_is_not_accepted(self):
         response = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(ALLOW)), finish_reason="length")])
@@ -282,9 +297,9 @@ class AgentFlowTests(unittest.TestCase):
         self.assertEqual(answer["actions"][0]["action"], "refuse")
 
     def test_prompt_overrides_are_loaded(self):
-        planner = GraphPlanner(api_key="offline-test", prompt_names={"safety": "agent_safety_v2"})
+        planner = GraphPlanner(api_key="offline-test", prompt_names={"safety": "agent_safety_v3"})
         self.addCleanup(planner.client.close)
-        self.assertTrue(planner.prompt_name.startswith("agent_safety_v2+agent_reference_v3"))
+        self.assertTrue(planner.prompt_name.startswith("agent_safety_v3+agent_reference_v2"))
 
 
 class ReplayTests(unittest.TestCase):

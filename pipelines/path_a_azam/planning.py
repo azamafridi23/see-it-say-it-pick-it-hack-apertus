@@ -8,10 +8,17 @@ class PlanIssue(ValueError):
         self.decision = decision
 
 
-class SceneState:
-    """Track current support relations, rather than treating every previously moved object as clear."""
+# What to do when an object only MAY be resting on the one that has to move (maybe_on):
+#   "lift"  lift it off first, as if it were resting there. The public answers expect a plan in these cases.
+#   "ask"   ask the person. More cautious; on the public scenes it turned two valid plans into questions.
+UNCERTAIN_SUPPORT = "lift"
 
-    def __init__(self, graph: dict):
+
+class SceneState:
+    """Track current support relations, rather than treating every previously moved object as clear.
+    uncertain: "lift" counts maybe_on as resting on, "ask" stops with a question, "ignore" lets the move through."""
+
+    def __init__(self, graph: dict, uncertain: str = "ask"):
         self.objects = {o["id"]: o for o in graph["objects"]}
         self.covers = {oid: set(o.get("covered_by", [])) for oid, o in self.objects.items()}
         self.uncertain = {oid: set() for oid in self.objects}
@@ -28,6 +35,10 @@ class SceneState:
             if covering - self.objects.keys():
                 raise PlanIssue(f"Scene graph has unknown blockers for {oid}.")
             self.uncertain[oid] -= covering
+            if uncertain == "lift":
+                covering |= self.uncertain[oid]
+            if uncertain != "ask":
+                self.uncertain[oid] = set()
         self.held = None
 
     def require_pickable(self, oid: str):
@@ -77,11 +88,12 @@ class SceneState:
             self.covers[destination].add(oid)
 
 
-def order_moves(tasks: list, graph: dict) -> dict:
-    """Clear confirmed blockers; ask about task-relevant uncertainty; never invent support edges."""
+def order_moves(tasks: list, graph: dict, uncertain: str | None = None) -> dict:
+    """Clear whatever lies on an object before moving it. What only may be lying on it is handled as
+    UNCERTAIN_SUPPORT says (or as the uncertain argument says): lifted off first, or asked about."""
     moves = []
     try:
-        state = SceneState(graph)
+        state = SceneState(graph, uncertain or UNCERTAIN_SUPPORT)
         goals = {}
         for task in tasks:
             for oid in task["objects"]:
@@ -127,8 +139,9 @@ def order_moves(tasks: list, graph: dict) -> dict:
     return {"decision": "plan", "moves": moves, "message": ""}
 
 
-def check(reply: dict, graph: dict) -> str | None:
-    """Return the first plan error, using the same state/uncertainty rules as move ordering."""
+def check(reply: dict, graph: dict, uncertain: str | None = None) -> str | None:
+    """Return the first plan error. With the "lift" policy a plan is not rejected for what only may be resting
+    on an object: the single-call planner is told about maybe_on in its prompt and decides for itself."""
     if not isinstance(reply, dict):
         return "The answer must be an object."
     decision, moves, message = reply.get("decision"), reply.get("moves"), reply.get("message")
@@ -139,7 +152,8 @@ def check(reply: dict, graph: dict) -> str | None:
     if decision != "plan" or not moves or message.strip():
         return "A plan needs at least one move and an empty message."
     try:
-        state = SceneState(graph)
+        policy = uncertain or UNCERTAIN_SUPPORT
+        state = SceneState(graph, "ask" if policy == "ask" else "ignore")
         for n, move in enumerate(moves, 1):
             if not isinstance(move, dict) or set(move) != {"object", "to"}:
                 return f"Move {n} needs exactly object and to."

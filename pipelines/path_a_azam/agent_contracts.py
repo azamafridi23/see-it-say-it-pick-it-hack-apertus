@@ -68,7 +68,7 @@ def validate_reply(role: str, reply, schema: dict, instruction: str) -> str | No
         if status == "conflict" and (not restrictions or message):
             return "A conflict needs object/quote restrictions and an empty message."
         for restriction in restrictions:
-            quote = restriction["quote"]
-            if not quote.strip() or quote not in instruction:
+            quote = restriction["quote"].strip().strip('"\'').strip()
+            if not quote or quote.lower() not in instruction.lower():
                 return "Every restriction must quote a nonempty exact excerpt from the instruction."
     return None

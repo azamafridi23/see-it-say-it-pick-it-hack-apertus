@@ -13,7 +13,7 @@ The reply format (thinking, decision, moves, message) is fixed by `planner.py`, 
 | Version | What changed | Script score on the public scenes |
 |---|---|---|
 | `planner_v1` | First version | 60.5, 60.5, 58.9 / 65 (three runs) |
-| `planner_v2` | Keeps uncertain support distinct from confirmed stacking, matching the shared checker | Not yet measured |
+| `planner_v2` | Keeps uncertain support distinct from confirmed stacking, matching the shared checker | 58.9 (one run); `planner_v1` stays the default |
 
 Apertus's answers vary a little between runs, and one instruction is worth about a point: run a version two
 or three times before calling it better. Choosing between many versions on the 50 public instructions fits
@@ -40,7 +40,10 @@ Names and file paths are accepted. Every reply is validated locally and retried 
 Scores on the public scenes, two runs each: 45.0 and 40.3 (first version, with a planning agent), 54.9 and 54.9,
 then 64.1 and 64.1 with the files above. Revised three times against the public answers.
 
-Those scores are for v1/v2. **v3 has no live-model score yet.** Its 20 demonstrations include public
+Those scores are for v1/v2. Measured since, replaying saved scene graphs: the defaults (safety v2, reference v2,
+constraint v4) 64.1 three times; with `agent_safety_v3` 62.5 three times; with `agent_reference_v3` 59.6 twice; all
+three v3 prompts with the "ask" policy 53.4 twice. `agent_constraint_v4` is v2's single question in v3's reply
+format. v3's 20 demonstrations include public
 instructions and constructed contrast cases; do not count performance on demonstrations as validation.
 
 The constraint schema changed in v3: it uses `status`, `restrictions: [{object, quote}]`, `message`,

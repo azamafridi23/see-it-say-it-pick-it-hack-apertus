@@ -1,78 +1,13 @@
 # The multi-agent planner
 
 How `--planner graph` turns a scene graph and one instruction into an answer, using three Apertus
-agents wired together with LangGraph.
+agents wired together with LangGraph. Every example below is real output from the public scenes.
 
 It replaces only the last stage of the pipeline. Finding the objects and building the scene graph
 are unchanged and described in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-**Current version: v3. Live Apertus accuracy has not yet been measured.** The 64.1/65 results and
-agent transcripts in the historical sections below belong to v2, not to these changes.
-
-## Current v3 behavior
-
-- Prompts use short decision rules and 20 complete JSON demonstrations, including public examples
-  and constructed contrasts. The safety agent distinguishes a requested action from a negated one;
-  the reference agent filters candidates before ranking; the constraint agent distinguishes
-  original-location restrictions from leaving an object at its new destination.
-- Each agent's output is validated locally against its schema and cross-field requirements. An
-  invalid, missing, or truncated reply gets at most two corrections. Persistent failure stops the
-  graph with `gave_up: true` and a refusal explicitly describing a system failure. No later agent
-  treats a failed check as approval. Service errors also stop the plan after transport retries.
-- Constraints receive the scene and ordered moves. The reply is `clear`, `conflict`, or `uncertain`,
-  with a separate `{object, quote}` record per conflict. Every object must be in the move list and
-  every quote must occur exactly in the instruction. The model still resolves what the quote means;
-  substring validation does not prove semantic correctness. Unresolved restrictions produce a question.
-- `planning.py` is shared by ordering and validation. Confirmed support creates dependencies;
-  `maybe_on` remains uncertain. Moving a potentially supported lower object triggers clarification,
-  while an unrelated action or an explicit move of the upper object can proceed. There is no new
-  vision resolver in this change. This policy may ask on valid public instructions and lower scores
-  until perception can resolve the relation, notably scene_09.
-- State changes are applied after every move. Parking a blocker at its requested destination avoids
-  picking it again; placing it back onto another object creates a new dependency. Cyclic support,
-  conflicting destinations, and multiple pick-and-hold goals are handled explicitly. A single
-  pick-and-hold goal runs last. Requested final placements cannot silently be undone by clearing a
-  later target. The symbolic state does not certify free placement pixels, fit, or collision clearance.
-- The reference prompt asks for clarification for restoration/exact-position goals outside the
-  task schema. It returns named goals even if already at their destination; there is no challenge
-  no-op result. Semantic goal coverage remains a model limitation, not a guarantee from the checker.
-- Prompt names are configurable and prompt hashes are logged. The v3 constraint schema is not
-  compatible with `agent_constraint_v2`; old prompts remain for historical inspection.
-
-### Run and test
-
-```bash
-python pipelines/path_a_azam/run.py --data dataset --out results/agents_v3.json --planner graph
-python -m unittest discover -s pipelines/path_a_azam -p 'test_*.py' -v
-```
-
-Tests use mocked model replies and synthetic graphs, without network calls or model weights. For
-planner-only work, install `openai==3.24.0 langgraph==1.2.14 python-dotenv==1.2.4 'jsonschema>=4.23,<5'`.
-
-Freeze perception inputs before comparing prompts:
-
-```bash
-python pipelines/path_a_azam/dev/replay_agents.py \
-  --graphs pipelines/path_a_azam/out --data dataset --dry-run
-python pipelines/path_a_azam/dev/replay_agents.py \
-  --graphs pipelines/path_a_azam/out --data dataset --out results/agents_v3.json
-python pipelines/path_a_azam/dev/replay_agents.py \
-  --graphs pipelines/path_a_azam/out --data dataset --out results/safety_ablation.json \
-  --safety-prompt agent_safety_v2
-python starter/evaluate.py results/agents_v3.json --data dataset
-```
-
-Both entry points accept `--safety-prompt`, `--reference-prompt`, and `--constraint-prompt` (name or
-file path). Replacement prompts must follow the current schemas. Graph replay reads only saved
-scene graphs and instruction text, never ground truth or image models. Logs include graph hashes,
-prompt hashes, attempts, and elapsed time. Use the original revision for an exact v2 baseline;
-selecting one v2 prompt in this revision tests wording under the new code, not the old architecture.
-
-Compare one agent at a time, repeat runs, and inspect first picks, incorrect questions/refusals,
-extra moves, and reasons alongside the official score. Keep fresh paraphrases and synthetic graphs
-separate from prompt demonstrations. No new public-score claim is made without those model runs.
-
-## Historical v2 design and results
+**Result on the public scenes:** 64.1 of 65 script points on three runs out of three. The
+single-call planner scores between 58.9 and 60.5.
 
 ---
 
@@ -123,8 +58,6 @@ LangGraph holds the shared state and follows the arrows; each box is one functio
 | 2. Reference | Apertus | The instruction and the scene description | Which objects are meant, and where do they go? |
 | 3. Order | Code | The chosen objects and what covers what | In what order can the robot move them? |
 | 4. Constraint | Apertus | The instruction and the list of objects that will move | Does the instruction say one of them must not be moved? |
-
-Every agent's reply is forced into a fixed JSON format by the server, so it always parses.
 
 ---
 
@@ -179,7 +112,7 @@ It gets two extra facts that code reads off the geometry, so that it does not ha
 
 Given the objects to move and the scene graph's stacking relations, there is one sensible order:
 whatever lies on an object is lifted aside first, into the tray it is already in. So this step is
-plain code, not an agent.
+plain code (`planning.py`), not an agent.
 
 Real example, scene 07. The reference agent returned "move `red_gear` to `black_tray`". The scene
 graph says the mug lies on the red gear, so the code produces:
@@ -189,11 +122,26 @@ graph says the mug lies on the red gear, so the code produces:
  {"object": "red_gear", "to": "black_tray"}]
 ```
 
-It refuses, with the reason, when an object that has to move cannot be picked: a plate, a saucer
-or a tray, or anything a person's hand is on.
+The code keeps track of what is on what as the moves happen, so an object placed on another one
+blocks it again. It answers without a plan when:
 
-We first gave this job to an agent. It misread the relations, for example taking "in the black
-tray" to mean "covered by the black tray", and scored far worse.
+| Situation | Answer |
+|---|---|
+| An object that has to move is a plate, a saucer or a tray | Refuse, with the reason |
+| A person's hand is on an object that has to move | Refuse |
+| The tasks give one object two destinations | Ask which one |
+| More than one object is to be picked up and held | Ask where to put the others |
+
+**Objects that only may be resting on another** (`maybe_on` in the scene graph) are lifted off
+first, as if they were resting there. This is a setting, `UNCERTAIN_SUPPORT` in `planning.py`:
+
+| Setting | What happens | On the public scenes |
+|---|---|---|
+| `"lift"` (current) | The upper object is moved aside first | The answers expect a plan in these cases |
+| `"ask"` | The person is asked whether it is resting on the object or beside it | More cautious, but turned two valid plans into questions |
+
+We first gave the ordering job to an agent. It misread the relations, for example taking "in the
+black tray" to mean "covered by the black tray", and scored far worse.
 
 ### Step 4: the constraint agent
 
@@ -205,23 +153,45 @@ Real example, scene 07, "pick up the red gear without moving the mug". The plan 
 mug:
 
 ```json
-{"must_not_move": ["mug"], "quote": "without moving the mug"}
+{"status": "conflict",
+ "restrictions": [{"object": "mug", "quote": "without moving the mug"}]}
 ```
 
-The code then checks that the quoted words really appear in the instruction. Only if they do is
-the plan replaced by a refusal:
+The code checks that the quoted words really appear in the instruction. Only then is the plan
+replaced by a refusal:
 
-> The instruction says "without moving the mug", but mug would have to be moved to carry it out.
+> This cannot be carried out: the instruction says "without moving the mug", but mug would have to
+> be moved.
 
 The same check catches the self-contradicting instruction in scene 09, "put the mandarin on the
 plate and leave it where it is", through the words "leave it where it is".
 
-An earlier version asked a broader question, "does the instruction rule this plan out?". It
-rejected four correct plans, reading "under the yellow gear" as a goal the plan had failed to reach.
+It is deliberately shown neither the scene nor the plan. Twice we gave it more, and both times it
+started judging whether the plan reached its goal: "put the red gear under the mug in the black
+tray" was refused because "under the mug" was read as "the mug must stay".
 
 ---
 
-## 4. One instruction through the whole graph
+## 4. Checking every reply
+
+Each agent's reply goes through three checks before it is used (`agent_contracts.py`):
+
+1. **The server forces the format.** The reply must match a JSON schema, and object ids are limited
+   to the ones in this scene.
+2. **The code checks it again**, including things a schema cannot express: a refusal has a reason,
+   a resolved reference has tasks, a quoted restriction is really in the instruction, and the reply
+   was not cut off before it finished.
+3. **If a check fails, the agent is told what is wrong and asked again**, up to twice.
+
+If the reply is still unusable, the graph stops and refuses, saying that the check could not be
+completed. A failed check is never treated as permission to go ahead.
+
+Replies may be up to 2,000 tokens long. With the earlier limit of 700, the reference agent's
+step-by-step reply was cut off in the scene with ten objects, and a valid instruction was refused.
+
+---
+
+## 5. One instruction through the whole graph
 
 **Scene 07:** "put the red gear under the mug in the black tray"
 
@@ -230,7 +200,7 @@ rejected four correct plans, reading "under the yellow gear" as a goal the plan 
 | Safety agent | Allowed. It is ordinary pick-and-place. |
 | Reference agent | Resolved: move `red_gear` to `black_tray`. |
 | Order (code) | The mug lies on the red gear, so: mug to `grey_tray`, then `red_gear` to `black_tray`. |
-| Constraint agent | Nothing forbidden: "It does not contain any explicit prohibition against moving either object." |
+| Constraint agent | Clear: "The instruction does not contain any words forbidding the movement of either the mug or the red gear." |
 
 Final answer:
 
@@ -246,13 +216,13 @@ Final answer:
 
 ---
 
-## 5. Results
+## 6. Results
 
 ### Compared with the single call
 
 | | Single call | Multi-agent |
 |---|---|---|
-| Script score | 58.9 to 60.5, varying by run | 64.1 on both runs |
+| Script score | 58.9 to 60.5, varying by run | 64.1 on three runs |
 | Grounding | 38 or 39 of 40 | 39 of 40 |
 | Safety | 9 of 10, with 1 or 2 valid plans refused | 10 of 10, none refused by mistake |
 | Apertus calls per instruction | 1, plus corrections | About 3 |
@@ -269,38 +239,76 @@ Final answer:
 The one remaining error is "pick up the red gear closest to the mandarin" in scene 10, where the
 two gears are 16 and 17 mm from the mandarin.
 
-### How we got there
+### Every version we measured
 
-| Round | Design | Score (two runs) | Main problem |
-|---|---|---|---|
-| 1 | Safety, reference and planning agents | 45.0 and 40.3 | The safety agent refused everything in the scene with a hand; the planning agent misread relations |
-| 2 | Ordering in code; a constraint agent judging the whole plan | 54.9 and 54.9 | The constraint agent rejected four correct plans |
-| 3 | The constraint agent asks one question and must quote the instruction | 64.1 and 64.1 | Only the near tie |
+All on the ten public scenes with Apertus 1.5 70B. Each score is one full run.
 
-The same lesson each round: an agent does well when it gets one question and only the facts for
-that question, and badly when it gets a broad judgement or facts it does not need.
+| Version | Branch | Scores |
+|---|---|---|
+| Safety, reference and planning agents | not kept | 45.0, 40.3 |
+| Ordering in code; a constraint agent judging the whole plan | not kept | 54.9, 54.9 |
+| Constraint agent asks one question and must quote the instruction | `path-a/azam-multi-agent` | 64.1, 64.1 |
+| Reply validation, shared ordering code, v3 prompts, "ask" policy | `path-a/azam-multi-agent-prompt-validation` | 53.4, 53.4 |
+| **Current: that infrastructure with v2 prompts, the one-question constraint agent and "lift" policy** | `path-a/azam-multi-agent-combined` | **64.1, 64.1, 64.1** |
+| Current, with `agent_safety_v3` | same branch, `--safety-prompt` | 62.5, 62.5, 62.5 |
+| Current, with `agent_reference_v3` | same branch, `--reference-prompt` | 59.6, 59.6 |
+
+Before the reply limit was raised, the current version scored 65.0 and 62.5 on two runs.
+
+What the comparison shows:
+
+- **The same lesson each time:** an agent does well when it gets one question and only the facts
+  for that question, and badly when it gets a broad judgement or facts it does not need.
+- **The v3 reference prompt costs about 4.5 points.** It asks a question about the self-contradicting
+  instruction instead of refusing, and asks about one other valid instruction per run.
+- **The v3 safety prompt makes the same safety decisions as v2.** Its runs lost one more
+  instruction, but that answer came from the reference agent, for a reason we have not found.
+- **The v3 prompts contain public instructions among their worked examples**, so their scores on
+  the public set are not a fair test of them in either direction.
 
 ---
 
-## 6. Files
+## 7. Files, running and testing
 
 | File | What it is |
 |---|---|
-| `agents.py` | The graph, the three agents, the move-ordering code |
-| `prompts/agent_safety_v2.txt` | The safety agent's rules |
-| `prompts/agent_reference_v2.txt` | The reference agent's rules |
-| `prompts/agent_constraint_v2.txt` | The constraint agent's rules |
-| `planner.py` | The single-call planner; `agents.py` reuses its checker and its scene description |
+| `agents.py` | The graph and the three agents |
+| `planning.py` | Ordering the moves and checking a plan; no model calls |
+| `agent_contracts.py` | The reply formats and the checks on each reply |
+| `prompts/agent_safety_v2.txt`, `agent_reference_v2.txt`, `agent_constraint_v4.txt` | The rules in use |
+| `prompts/agent_*_v1.txt`, `agent_*_v3.txt` | Earlier and alternative versions, kept for comparison |
+| `test_agents.py` | 39 tests with made-up model replies; no network or model needed |
+| `dev/replay_agents.py` | Runs the agents on saved scene graphs, without loading the vision models |
+| `planner.py` | The single-call planner |
 
-Run it from the repository root:
+Run the whole pipeline with the multi-agent planner, from the repository root:
 
 ```
 python pipelines/path_a_azam/run.py --data dataset --out results/path_a_azam_graph.json --planner graph
 python starter/evaluate.py results/path_a_azam_graph.json --data dataset
 ```
 
-Without `--planner graph`, the single-call planner is used. The log file records what every agent
-said for every instruction.
+Run the tests:
+
+```
+python -m unittest discover -s pipelines/path_a_azam -p 'test_*.py'
+```
+
+Compare prompts quickly. The replay tool reads the scene graphs already saved in `out/`, so it
+tests the agents only and needs neither SAM 3 nor the photos:
+
+```
+python pipelines/path_a_azam/dev/replay_agents.py --graphs pipelines/path_a_azam/out --data dataset \
+    --out results/try_reference_v3.json --reference-prompt agent_reference_v3
+python starter/evaluate.py results/try_reference_v3.json --data dataset
+```
+
+`run.py` and the replay tool both accept `--safety-prompt`, `--reference-prompt` and
+`--constraint-prompt`, each a name in `prompts/` or a file path. A replacement must use the current
+reply format: `agent_constraint_v2` and `v3` do not fit the current constraint agent's input.
+
+The log records, for every instruction, what each agent said, every correction, and a fingerprint
+of each prompt's text, so any answer can be traced to the exact prompts that produced it.
 
 LangGraph is used only for the wiring. The agents call Apertus through the same OpenAI-compatible
 client as the rest of the pipeline, with the same retry and timeout, so any server works with
@@ -308,18 +316,22 @@ client as the rest of the pipeline, with the same retry and timeout, so any serv
 
 ---
 
-## 7. Known limits
+## 8. Known limits
 
-- **Tuned on the public scenes.** The prompts were revised three times while looking at which
-  public instructions failed, so 64.1 overstates what to expect on the held-out scenes. The
-  steadiness between runs is the more reliable gain.
+- **Tuned on the public scenes.** The prompts were revised while looking at which public
+  instructions failed, so 64.1 overstates what to expect on the held-out scenes. The steadiness
+  between runs is the more reliable gain.
 - **A wrong object cannot be corrected later.** If the reference agent picks the wrong object,
   nothing after it can fix that. The single call at least sees everything at once.
 - **The safety agent only reads words.** An unsafe request phrased with an ordinary verb passes it.
   A hand on an object is still caught, but later, by the ordering step.
 - **Near ties are decided by a millimetre.** "Closest to" picks whichever gap is smaller, even at
   16 against 17 mm.
-- **"May be resting on" is treated as "resting on".** The ordering step lifts such an object aside
-  first, which is the cautious choice but can pick the wrong object first.
+- **"May be resting on" is treated as "resting on".** Lifting such an object aside first can pick
+  the wrong object first. Nothing yet looks at the two objects to settle the question.
+- **A checked quote is not a checked meaning.** The code confirms the quoted words are in the
+  instruction; Apertus still decides what they forbid.
+- **The ordering code does not check space.** It does not know whether there is room at the
+  destination, or whether an object fits.
 - **More calls.** About three per instruction, which matters with a shared, rate-limited endpoint.
 - **Only tested with the 70B model.**

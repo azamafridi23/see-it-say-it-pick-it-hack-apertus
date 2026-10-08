@@ -28,8 +28,9 @@ from planner import BASE_URL, MODEL, check, describe, load_prompt, to_answer, wi
 from planning import order_moves
 from agent_contracts import SAFETY_SCHEMA, constraint_schema, reference_schema, validate_reply
 
-PROMPTS = {"safety": "agent_safety_v3", "reference": "agent_reference_v3", "constraint": "agent_constraint_v3"}
+PROMPTS = {"safety": "agent_safety_v2", "reference": "agent_reference_v2", "constraint": "agent_constraint_v4"}
 MAX_AGENT_RETRIES = 2
+MAX_TOKENS = 2000   # the reference agent thinks step by step: in a scene with ten objects, 700 cut its reply short
 
 
 def scene_for_reference(graph: dict) -> dict:
@@ -80,7 +81,7 @@ class GraphPlanner:
 
     def ask(self, messages: list[dict], schema: dict) -> tuple[str, dict | None]:
         r = with_patience(
-            self.client.chat.completions.create, model=self.model, messages=messages, temperature=0, max_tokens=700,
+            self.client.chat.completions.create, model=self.model, messages=messages, temperature=0, max_tokens=MAX_TOKENS,
             response_format={"type": "json_schema", "json_schema": {"name": "answer", "schema": schema, "strict": True}})
         if not r.choices:
             return "", None
@@ -157,8 +158,9 @@ class GraphPlanner:
 
     def constraint(self, s: State) -> dict:
         moved = list(dict.fromkeys(m["object"] for m in s["plan"]["moves"]))
-        user = (f'INSTRUCTION\n{s["instruction"]}\n\nSCENE\n{json.dumps(describe(s["graph"]))}'
-                f'\n\nPROPOSED MOVES\n{json.dumps(s["plan"]["moves"])}')
+        # Only the objects that will move, not the scene or the plan: given those, it judged whether the plan
+        # reached the goal and rejected correct plans ("under the mug" read as "the mug must stay").
+        user = f'INSTRUCTION\n{s["instruction"]}\n\nTHE ROBOT WILL MOVE\n{", ".join(moved)}'
         reply, attempts = self.checked_ask("constraint", user, constraint_schema(moved), s["instruction"])
         log = s["log"] + attempts
         if reply is None:
@@ -166,9 +168,10 @@ class GraphPlanner:
         if reply["status"] == "uncertain":
             return {"log": log, "reply": {"decision": "ask_user", "moves": [], "message": reply["message"].strip()}}
         if reply["status"] == "conflict":
-            reasons = [f'{r["object"]}: "{r["quote"]}"' for r in reply["restrictions"]]
+            reasons = [f'the instruction says "{r["quote"].strip()}", but {r["object"]} would have to be moved'
+                       for r in reply["restrictions"]]
             return {"log": log, "reply": {"decision": "refuse", "moves": [], "message":
-                    "The plan would move objects the instruction requires to stay in place: " + "; ".join(reasons)}}
+                    "This cannot be carried out: " + "; ".join(reasons) + "."}}
         return {"log": log, "reply": s["plan"]}
 
     # ------------------------------------------------------------------ the wiring

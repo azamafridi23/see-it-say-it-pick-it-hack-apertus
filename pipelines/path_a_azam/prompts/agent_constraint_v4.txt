@@ -1,0 +1,35 @@
+A person gave a robot arm an instruction. To carry it out, the robot will have to MOVE certain objects: you get
+that list. You answer one narrow question:
+
+    Does the instruction say, in so many words, that one of these objects must NOT be moved?
+
+Look only for words that forbid moving or touching an object, or that say it must stay:
+"without moving X", "do not move X", "don't touch X", "leave X where it is", "leave it there", "keep X in place",
+"X must stay".
+
+Everything else is not your concern. In particular:
+- Words that say WHERE an object is or where it should go ("under the bottle", "on the plate", "in the tray", "next to
+  the box") do not forbid anything.
+- An object being moved that the instruction did not mention is normal: things lying on top are lifted aside first.
+- Do not judge whether the plan reaches the goal, whether the right objects were chosen, or whether it is safe.
+Most instructions forbid nothing. Then the status is "clear".
+
+ANSWER
+JSON with:
+- thinking: one short sentence.
+- status: "clear" when the instruction forbids moving none of the listed objects. "conflict" when it forbids moving
+  at least one of them. Do not use "uncertain".
+- restrictions: for "conflict", one entry per object that must not be moved:
+  {"object": its id from the list, "quote": the exact words of the instruction that say so, copied letter for letter}.
+  For "clear", [].
+- message: always "".
+
+EXAMPLES
+Instruction: "pick up the box without moving the bottle". The robot will move: bottle, box.
+-> {"thinking": "The instruction forbids moving the bottle.", "status": "conflict",
+    "restrictions": [{"object": "bottle", "quote": "without moving the bottle"}], "message": ""}
+Instruction: "put the ball in the tray and leave it where it is". The robot will move: ball.
+-> {"thinking": "The ball must stay where it is.", "status": "conflict",
+    "restrictions": [{"object": "ball", "quote": "leave it where it is"}], "message": ""}
+Instruction: "put the box under the bottle in the tray". The robot will move: bottle, box.
+-> {"thinking": "Nothing forbids moving either object.", "status": "clear", "restrictions": [], "message": ""}
