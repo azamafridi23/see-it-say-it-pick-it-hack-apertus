@@ -97,7 +97,7 @@ Notes on the wording, each found by testing:
 - **"grey tray"** and **"black mat"** come back as surfaces with holes where objects sit. That is
   used twice below.
 
-Detections scoring under 0.5 are dropped. Results are cached per photo and prompt, so trying a new
+Detections scoring under 0.5 are dropped. Results are cached per photo (by its content, not its folder name) and prompt, so trying a new
 prompt costs about 2 seconds and rebuilding a scene graph needs no model.
 
 A raw run gives 40–50 detections per photo, many wrong or duplicated. Stage 3 cleans them up.
@@ -176,15 +176,20 @@ This needs no wording at all, so it catches exactly what the prompts miss.
 | `colour` | The median colour of the outline's pixels |
 | `size_mm` | The box, converted to millimetres on the table plane with `calibration.json` |
 | `in` | `grey_tray` or `black_tray`, from where the pixel lies |
-| `pickable` | False for plates, saucers, trays and hands |
+| `pickable` | False for plates, saucers, trays and hands; true for everything else |
+| `why_not_pickable` | The reason in words. Kept in the scene graph file and used in the checker's message; not shown to Apertus up front (see 6.7) |
 | `touching_hand` | True when the outline is within 25 pixels of a hand |
 | `nearest_gap_mm` | Every other object, nearest first, with the gap in millimetres |
 | `found_by` | `prompt`, `apertus` or `leftover` |
 
 A "plate" narrower than 155 mm is renamed `saucer`. SAM 3 does not tell the two apart; size does.
 
-`pickable` is set by type, not by measured size: the gears measure about 90 mm across, wider than
-the 85 mm gripper, yet the instructions expect them to be picked.
+`pickable` is set by what the object is, not by its measured size. The organisers confirmed this: the 85 mm is
+the gripper's opening, and it only has to close on one narrow part of an object (a gear's hub, a mug's rim or
+handle, the edge of a part). Only the plate and the saucer lie flat with no narrow part to close on, so they are
+the only objects that cannot be picked. Everything else can, including objects nobody named. `size_mm` is kept
+as information only. We tried deciding by size instead; it scored 52.2 and 56.5 against 60.5, and that experiment
+is on the `path-a/azam-depth-size` branch.
 
 The graph also lists all objects in `left_to_right` and `top_to_bottom` order. Together with
 `nearest_gap_mm`, this lets Apertus read off "leftmost" and "closest to" without doing arithmetic.
@@ -239,6 +244,11 @@ One object from scene 06, as sent to Apertus:
 
 ---
 
+**More detail is not always better.** We tried adding `why_not_pickable` to every plate, saucer and tray in this
+description. With the same prompt, the score fell from 58.9 to 52.8 (and 52.8 and 51.4 with a prompt that
+explained the field): Apertus started failing instructions that have nothing to do with plates. So the reason is
+only given to Apertus by the checker, when it actually tries to pick such an object.
+
 ## 7. Stage 4: Apertus plans
 
 Apertus gets a fixed set of rules, the scene graph and the instruction. Its reply is forced into a
@@ -274,7 +284,7 @@ Apertus in plain words and it tries again, up to two more times.
 
 | Check | Error sent back |
 |---|---|
-| The object to pick is not pickable | "plate cannot be picked up. If the instruction needs that, decide refuse." |
+| The object to pick is not pickable | "plate cannot be picked up: it lies flat and has no narrow part for the gripper to close on… If the instruction needs that, decide refuse and give this as the reason." |
 | A hand is touching the object | "a person's hand is on mug. The robot must not move it: decide refuse." |
 | Something still lies on the object | "red_gear is covered by mug. Move mug aside first, or decide refuse if the instruction does not allow that." |
 | The destination is the object itself | "to is where red_cube is put down, not the object itself." |
@@ -282,6 +292,9 @@ Apertus in plain words and it tries again, up to two more times.
 | The destination is a hand | "the robot must not hand objects to a person: decide refuse." |
 
 If all three attempts fail, the answer is a refusal saying no valid plan could be produced.
+
+Every call to Apertus has a two-minute timeout, and waits and tries again for up to about five minutes when the
+server is busy or unreachable.
 
 Finally the moves are expanded into the challenge's format, and `target_pixel` is set to the scene
 graph's pixel for the first object picked.
@@ -358,6 +371,9 @@ Both are reasoning errors by Apertus. The scene graph was correct in both cases.
 ---
 
 ## 11. Known limits
+
+- **Answers change from run to run.** Two runs of the same code can differ by several points, so one run does
+  not show that a change is better or worse.
 
 - **Tuned on the public scenes.** The prompt wording, the rules given to Apertus and about a dozen
   thresholds were all chosen while looking at these ten photos. Some margins are thin: the 12%

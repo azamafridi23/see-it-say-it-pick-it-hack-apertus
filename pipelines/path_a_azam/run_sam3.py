@@ -103,6 +103,11 @@ def detect(scene: Path, prompts=PROMPTS, threshold: float = THRESHOLD, device: s
     return out
 
 
+def photo_key(photo: Path) -> str:
+    """A short fingerprint of the photo's content. Caches use it, so two scenes with the same folder name never mix."""
+    return hashlib.sha1(Path(photo).read_bytes()).hexdigest()[:10]
+
+
 def interior_pixel(mask: np.ndarray) -> list[int]:
     """The pixel deepest inside the mask: safer than the box centre for a banana or a mug handle."""
     dist = cv2.distanceTransform(mask.astype(np.uint8), cv2.DIST_L2, 5)

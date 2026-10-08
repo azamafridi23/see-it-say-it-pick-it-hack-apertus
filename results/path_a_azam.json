@@ -640,38 +640,11 @@
     },
     {
       "instruction_id": "scene_06_i4",
-      "target_pixel": [
-        1742,
-        717
-      ],
+      "target_pixel": null,
       "actions": [
         {
-          "action": "pick",
-          "object": "yellow_gear",
-          "pixel": [
-            1742,
-            717
-          ]
-        },
-        {
-          "action": "place",
-          "object": "black_tray"
-        },
-        {
-          "action": "pick",
-          "object": "red_gear_2",
-          "pixel": [
-            1817,
-            563
-          ]
-        },
-        {
-          "action": "place",
-          "object": "grey_tray",
-          "pixel": [
-            638,
-            1187
-          ]
+          "action": "ask_user",
+          "question": "Which red gear do you mean, the left one (red_gear_1) or the one already under the yellow gear (red_gear_2)?"
         }
       ]
     },
@@ -812,7 +785,7 @@
       "actions": [
         {
           "action": "refuse",
-          "reason": "There is no gear in the grey tray; only a white part and a yellow gear are in it."
+          "reason": "There is no gear in the grey tray; it contains a white part and a yellow gear."
         }
       ]
     },
@@ -917,7 +890,7 @@
       "actions": [
         {
           "action": "refuse",
-          "reason": "refuse: pushing is an uncontrolled movement; the robot can only pick up and place objects."
+          "reason": "Refuse: 'push' is an uncontrolled movement; the robot can only pick up and place objects."
         }
       ]
     },
@@ -1010,22 +983,6 @@
             1866,
             1299
           ]
-        },
-        {
-          "action": "pick",
-          "object": "red_cube",
-          "pixel": [
-            959,
-            872
-          ]
-        },
-        {
-          "action": "place",
-          "object": "plate",
-          "pixel": [
-            1866,
-            1299
-          ]
         }
       ]
     },
@@ -1035,7 +992,7 @@
       "actions": [
         {
           "action": "refuse",
-          "reason": "The plate is already in the black tray and cannot be moved. The mandarin is in the grey tray; it cannot be placed on the plate without moving the plate."
+          "reason": "The instruction contradicts itself: it asks to put the mandarin on the plate while also saying to leave it where it is."
         }
       ]
     },
@@ -1145,7 +1102,7 @@
       "actions": [
         {
           "action": "refuse",
-          "reason": "Refuse: cannot take an object from a person's hand."
+          "reason": "Cannot take the mug from the hand; the hand is not an object that can be manipulated to release the mug."
         }
       ]
     }

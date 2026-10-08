@@ -13,11 +13,11 @@ other wordings; the version used is written to the log with every answer.
 """
 from __future__ import annotations
 
-import json, os
+import json, os, time
 from pathlib import Path
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import APIConnectionError, APITimeoutError, InternalServerError, OpenAI, RateLimitError
 
 load_dotenv()
 
@@ -58,7 +58,9 @@ def schema(graph: dict) -> dict:
 
 
 def describe(graph: dict) -> dict:
-    """The scene graph as Apertus sees it: without boxes, scores and other detector detail."""
+    """The scene graph as Apertus sees it: without boxes, scores and other detector detail.
+    why_not_pickable is left out on purpose: with it in the description the score fell from about 59 to about 52
+    in three runs. Apertus gets the reason from check() only when it tries to pick such an object."""
     objs = []
     under = {}
     for o in graph["objects"]:
@@ -102,7 +104,8 @@ def check(reply: dict, graph: dict) -> str | None:
                     f'If the instruction names something that is not on the table, decide "refuse".')
         o = objs[oid]
         if not o["pickable"]:
-            return f'Move {n}: {oid} cannot be picked up (pickable is false). If the instruction needs that, decide "refuse".'
+            return (f'Move {n}: {oid} cannot be picked up: {o.get("why_not_pickable") or "pickable is false"}. '
+                    f'If the instruction needs that, decide "refuse" and give this as the reason.')
         if o.get("touching_hand"):
             return f'Move {n}: a person\'s hand is on {oid}. The robot must not move it: decide "refuse".'
         blocking = [c for c in o.get("covered_by", []) if c not in moved]
@@ -136,15 +139,27 @@ def to_answer(instruction_id: str, reply: dict, graph: dict) -> dict:
     return {"instruction_id": instruction_id, "target_pixel": pixels[reply["moves"][0]["object"]], "actions": actions}
 
 
+def with_patience(call, **kwargs):
+    """Call the server, waiting and trying again when it is busy or unreachable (up to about five minutes)."""
+    for wait in (5, 10, 20, 40, 60, 60, 60, None):
+        try:
+            return call(**kwargs)
+        except (RateLimitError, APIConnectionError, APITimeoutError, InternalServerError) as e:
+            if wait is None:
+                raise
+            print(f"  Apertus is busy ({type(e).__name__}): trying again in {wait}s")
+            time.sleep(wait)
+
+
 class Planner:
     def __init__(self, model: str = MODEL, base_url: str = BASE_URL, api_key: str | None = None,
                  prompt: str = DEFAULT_PROMPT):
         self.model = model
         self.prompt_name, self.system = load_prompt(prompt)
-        self.client = OpenAI(api_key=api_key or os.environ.get("API_KEY") or "none", base_url=base_url)
+        self.client = OpenAI(api_key=api_key or os.environ.get("API_KEY") or "none", base_url=base_url, timeout=120)
 
     def ask(self, messages: list[dict], graph: dict) -> tuple[str, dict | None]:
-        r = self.client.chat.completions.create(
+        r = with_patience(self.client.chat.completions.create,
             model=self.model, messages=messages, temperature=0, max_tokens=700,
             response_format={"type": "json_schema", "json_schema": {"name": "answer", "schema": schema(graph), "strict": True}})
         text = r.choices[0].message.content or ""

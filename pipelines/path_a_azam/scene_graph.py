@@ -30,7 +30,7 @@ import cv2
 import numpy as np
 
 from apertus_list import names_for
-from run_sam3 import CACHE, DEVICE, detect, draw, interior_pixel
+from run_sam3 import CACHE, DEVICE, detect, draw, interior_pixel, photo_key
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "starter"))
 from scene_io import load_scene, pixel_to_table  # noqa: E402
@@ -39,7 +39,12 @@ CANON = {"orange fruit": "mandarin", "small yellow gear": "yellow gear", "saucer
 # Which label wins when two prompts find the same thing: a named object beats a vague prompt beats "object".
 TIER = {"white part": 2, "object": 3}
 CONTAINERS = {"grey tray", "plate", "saucer"}          # things lie in or on these; they are never fragments of them
-NOT_PICKABLE = {"grey tray", "black tray", "plate", "saucer", "hand"}
+# What cannot be picked, and why. The organisers confirmed that this is a property of the object, not a size rule:
+# the gripper closes on one narrow part (a gear's hub, a mug's rim, a part's edge), and only the plate and the
+# saucer have none. Every other object can be picked, including ones nobody named.
+FLAT = "it lies flat and has no narrow part for the gripper to close on; things can still be put on it"
+TRAY = "a tray is never picked up; things are put in it"
+NOT_PICKABLE = {"plate": FLAT, "saucer": FLAT, "grey tray": TRAY, "black tray": TRAY, "hand": "it is a person's hand"}
 ROUND = {"red gear", "yellow gear"}                    # a circle recovers their outline when part is hidden
 NAMES = {"metal bracket": "grey_part", "object": "unknown_object"}
 
@@ -111,7 +116,7 @@ def black_mat(rgb: np.ndarray) -> np.ndarray | None:
 
 def relative_depth(scene_dir: Path, rgb: np.ndarray) -> np.ndarray | None:
     """Monocular depth, larger = closer to the camera. Only good for comparing neighbours. Cached; None if unavailable."""
-    path = CACHE / f"{scene_dir.name}_depth.npy"
+    path = CACHE / f"{scene_dir.name}_{photo_key(scene_dir / 'rgb.png')}_depth.npy"
     if path.exists():
         return np.load(path)
     try:
@@ -327,12 +332,14 @@ def build(scene_dir: Path, dets: list[dict], extra: list[dict] = (), leftover: b
              "top_to_bottom": [o["id"] for o in sorted(things, key=lambda o: o["pixel"][1])],
              "objects": [{"id": o["id"], "label": o["label"], "colour": colour_name(scene.rgb, o["mask"]),
                           "pixel": o["pixel"], "box_xyxy": o["box_xyxy"], "size_mm": o["size_mm"],
-                          "pickable": o["label"] not in NOT_PICKABLE, "in": o["in"], "on": o["on"],
+                          "pickable": o["label"] not in NOT_PICKABLE,
+                          "why_not_pickable": NOT_PICKABLE.get(o["label"]), "in": o["in"], "on": o["on"],
                           "maybe_on": o["maybe_on"], "covered_by": o["covered_by"],
                           "touching_hand": o["touching_hand"], "nearest_gap_mm": o["nearest"], "found_by": o["found_by"],
                           "score": round(o["score"], 2)} for o in objs]}
     if mat is not None:
         graph["objects"].append({"id": "black_tray", "label": "black tray", "pickable": False,
+                                 "why_not_pickable": TRAY,
                                  "note": "the black mat on the right; a place to put things"})
     return graph, objs
 
