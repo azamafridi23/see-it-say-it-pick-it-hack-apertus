@@ -1,5 +1,54 @@
 # See It, Say It, Pick It
 
+Our entry for the Hack Apertus 2026 ZHAW challenge: one photo of a robot table and one English
+sentence go in, a safe robot action comes out (a plan, a question, or a refusal).
+
+The organisers' original brief is in [docs/CHALLENGE.md](docs/CHALLENGE.md), and the scoring rules
+are in [EVALUATION.md](EVALUATION.md).
+
+## Results on the 10 public scenes
+
+| Pipeline | Approach | Grounding (35) | Safety (30) | Script total (65) |
+|---|---|---|---|---|
+| `path_a_azam` | SAM 3 + scene graph + Apertus 1.5 (70B) | 34.1 | 26.3 | **60.5** |
+| `path_a_randy` | to be added | | | |
+| `path_b_randy_nocrop` | Apertus boxes + OpenCV measuring + Path A's planner, Apertus 1.5 (70B) | 29.8 | 24.3 | **54.0** |
+| `path_b_wahyu` | Apertus alone, to be added | | | |
+
+The public answers are public, so the held-out scenes are the real test.
+
+## How `path_a_azam` works
+
+1. **SAM 3** finds every object in the photo and its outline.
+2. **Apertus** lists what it sees, so objects outside the fixed prompt list are found too.
+3. **Code** builds a scene graph: each object's position, size, and what lies on what.
+4. **Apertus** reads the scene graph and the instruction and decides: plan, ask, or refuse.
+5. **Code** checks the answer against the scene graph and asks Apertus to correct it if needed.
+
+Apertus chooses the object; the pixel always comes from SAM 3. Details:
+[pipelines/path_a_azam/ARCHITECTURE.md](pipelines/path_a_azam/ARCHITECTURE.md).
+
+## How `path_b_randy_nocrop` works
+
+1. **Apertus** finds every object on the whole photo in one call: a name and a bounding box each.
+2. **Code** corrects the boxes (they sit about 10% too high) and takes each box centre as the
+   object's pixel.
+3. **OpenCV** only measures: sizes, gaps, which tray each object is in, and, where two boxes
+   overlap, which object lies on top (the one whose colour shows in the overlap).
+4. **Code** builds a scene graph, like `path_a_azam`'s.
+5. **Apertus** checks the sentence alone and refuses unsafe or self-contradicting instructions.
+6. **Apertus** reads the scene graph and the instruction and decides: plan, ask, or refuse, using
+   `path_a_azam`'s planner.
+7. **Code** checks the answer against the scene graph and asks Apertus to correct it if needed.
+
+Apertus is the only learned model and the main detector; OpenCV only measures. The box correction
+and the stacking thresholds were fitted on the public scenes, so the held-out score will be lower. Details:
+[pipelines/path_b_randy_nocrop/ARCHITECTURE.md](pipelines/path_b_randy_nocrop/ARCHITECTURE.md).
+
+---
+
+## Challenge brief
+
 **Hack Apertus 2026 · ZHAW challenge.** Use Apertus to turn one photo of a robot workcell
 and one English instruction into a safe robot action.
 
