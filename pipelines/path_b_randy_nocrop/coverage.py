@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Mark coverage, no model: does every plan target have a mark on it?
+"""OpenCV mark coverage (`--opencv-marks`), no model: does every plan
+target have a mark on it?
 
-    python pathb/coverage.py --data dataset
+    python pipelines/path_b_randy_nocrop/coverage.py --data dataset
 
 Coverage is the ceiling on grounding: Apertus can only name a mark that
 exists. Also lists duplicate marks (one object, several marks) and marks
@@ -16,10 +17,10 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "starter"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "starter"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from evaluate import SceneGT  # noqa: E402
-from pipeline import find_marks  # noqa: E402
+from opencv_marks import find_marks  # noqa: E402
 
 
 def coverage(data):

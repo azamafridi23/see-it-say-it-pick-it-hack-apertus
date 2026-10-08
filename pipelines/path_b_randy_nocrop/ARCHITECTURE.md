@@ -10,11 +10,24 @@ every object. Earlier versions cropped one close-up per OpenCV blob. The
 planner is `path_a_azam`'s, ported: the same prompt, schema, checker and
 retries, fed with a scene graph built from Apertus's boxes instead of SAM 3.
 
-The code is in [`pathb/`](../../pathb):
-- `pipeline.py`: the pipeline and its command line;
-- `planner.py`: the scene graph and the ported planner;
-- `test_pathb.py`: the tests;
-- `coverage.py`: the coverage report for the older OpenCV marks.
+The code is in this folder, one module per job:
+
+| File | Job |
+|---|---|
+| `pipeline.py` | wiring and the command line only |
+| `detect.py` | step 1–2: Apertus finds the objects, boxes corrected into marks |
+| `measure.py` | step 3: OpenCV measuring (sizes, gaps, tray, what lies on top) |
+| `planner.py` | steps 4, 6, 7: scene graph, Path A's planner, checker |
+| `safety.py` | step 5: the pre-check |
+| `apertus.py` | the Apertus client: retries, calls in flight, safe `ask()` |
+| `paths.py` | puts the organisers' `starter` and `baseline` on the path |
+| `opencv_marks.py`, `closeups.py` | older detector and naming (`--opencv-marks`, `--no-boxes`) |
+| `decide.py`, `mentions.py`, `zoom.py` | older planning stage (`--no-planner`) |
+| `test_pathb.py` | the tests, at the `run()` seam |
+| `coverage.py` | coverage report for the older OpenCV marks |
+
+The current design calls only the top seven. The older modules are imported
+but only run behind their switches, for the ablations in the results table.
 
 ## Flow
 
@@ -241,7 +254,7 @@ The full log of Apertus's weaknesses, with evidence, is in
 ## Run
 
 ```
-APERTUS_API_KEY=... python pathb/pipeline.py --data dataset --out results.json \
+APERTUS_API_KEY=... python pipelines/path_b_randy_nocrop/pipeline.py --data dataset --out results.json \
     --base-url https://hackapertus.livemap.sh/v1 --model apertus-v1.5-70b
 python starter/evaluate.py results.json --data dataset
 ```

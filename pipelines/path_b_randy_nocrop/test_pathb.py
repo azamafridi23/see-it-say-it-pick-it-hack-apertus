@@ -1,6 +1,6 @@
 """Tests at the two agreed seams, with a scripted fake in place of Apertus.
 
-    .venv/bin/python -m unittest pathb/test_pathb.py
+    .venv/bin/python -m unittest pipelines/path_b_randy_nocrop/test_pathb.py
 """
 import json
 import re
@@ -19,11 +19,19 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "starter"))
-sys.path.insert(0, str(ROOT / "pathb"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from evaluate import SceneGT, answer_type  # noqa: E402
+import apertus  # noqa: E402
+import closeups  # noqa: E402
+import detect  # noqa: E402
+import measure  # noqa: E402
+import mentions  # noqa: E402
+import opencv_marks  # noqa: E402
 import pipeline  # noqa: E402
+import safety  # noqa: E402
+import zoom  # noqa: E402
 
 DATA = ROOT / "dataset"
 GT_FILE = DATA / "ground_truth" / "ground_truth.json"
@@ -146,9 +154,9 @@ def unmarked_pick(scene, name, sees=True):
             return json.dumps({})
 
         x0, x1, y0, y1 = map(float, re.search(view, prompt, re.S).groups())
-        col = int((100 * u / w - x0) / (x1 - x0) * pipeline.GRID)
-        row = int((100 * v / h - y0) / (y1 - y0) * pipeline.GRID)
-        inside = 0 <= col < pipeline.GRID and 0 <= row < pipeline.GRID
+        col = int((100 * u / w - x0) / (x1 - x0) * zoom.GRID)
+        row = int((100 * v / h - y0) / (y1 - y0) * zoom.GRID)
+        inside = 0 <= col < zoom.GRID and 0 <= row < zoom.GRID
         cell = f"{chr(65 + col)}{row + 1}" if sees and inside else None
         return json.dumps({"cell": cell})
 
@@ -211,7 +219,7 @@ class DecideVoting(unittest.TestCase):
     def test_majority_plan_takes_the_most_common_sequence(self):
         model = scripted((1, "a"), (1, "a"), (2, "b"), "refuse", "ask")
         results = self.run_scene_06(model, votes=5)
-        mark_1 = pipeline.find_marks(SceneGT(
+        mark_1 = opencv_marks.find_marks(SceneGT(
             DATA, DATA / "ground_truth", "scene_06").scene.rgb)[0]
         for r in results:
             self.assertEqual(answer_type(r), ("plan", None))
@@ -390,19 +398,19 @@ class ApertusClient(unittest.TestCase):
         return handler, url
 
     def setUp(self):
-        waits = pipeline.RETRY_WAITS
-        pipeline.RETRY_WAITS = (0.01,) * len(waits)
-        self.addCleanup(setattr, pipeline, "RETRY_WAITS", waits)
+        waits = apertus.RETRY_WAITS
+        apertus.RETRY_WAITS = (0.01,) * len(waits)
+        self.addCleanup(setattr, apertus, "RETRY_WAITS", waits)
 
     def test_too_many_requests_is_retried(self):
         server, url = self.serve(busy=2)
-        call = pipeline.apertus(url, "m", 64, 5)
+        call = apertus.apertus(url, "m", 64, 5)
         self.assertEqual(call("hi", [], {"type": "object"}), "ok")
         self.assertEqual(server.seen, 3)
 
     def test_no_more_calls_in_flight_than_allowed(self):
         server, url = self.serve()
-        call = pipeline.apertus(url, "m", 64, 5, parallel=3)
+        call = apertus.apertus(url, "m", 64, 5, parallel=3)
         with ThreadPoolExecutor(12) as pool:
             for _ in range(12):
                 pool.submit(call, "hi", [], {"type": "object"})
@@ -435,14 +443,14 @@ def catalogue(extracted, namer=lambda colour: f"{colour} cube"):
     lock = threading.Lock()
 
     def model(prompt, images, schema, temperature=0):
-        if schema is pipeline.NAME_SCHEMA:
+        if schema is closeups.NAME_SCHEMA:
             colour = re.search(r"colour (\w+)", prompt).group(1)
             with lock:
                 seen["names"].append((prompt, images))
 
             return json.dumps({"name": namer(colour)})
 
-        if schema is pipeline.EXTRACT_SCHEMA:
+        if schema is mentions.EXTRACT_SCHEMA:
             return json.dumps({"objects": extracted})
 
         if "verdict" in schema.get("properties", {}):
@@ -477,7 +485,7 @@ class Closeups(unittest.TestCase):
     def test_each_mark_is_named_from_its_own_closeup(self):
         seen = self.run_scene_01(catalogue([]))
         rgb = SceneGT(DATA, DATA / "ground_truth", "scene_01").scene.rgb
-        self.assertEqual(len(seen["names"]), len(pipeline.find_marks(rgb)))
+        self.assertEqual(len(seen["names"]), len(opencv_marks.find_marks(rgb)))
         for prompt, images in seen["names"]:
             self.assertEqual(len(images), 1)
             self.assertLess(images[0].size, rgb.size)
@@ -511,7 +519,7 @@ class Closeups(unittest.TestCase):
         model = catalogue([])
 
         def unsure(prompt, images, schema, temperature=0):
-            if schema is pipeline.NAME_SCHEMA:
+            if schema is closeups.NAME_SCHEMA:
                 return json.dumps({"name": "unsure"})
 
             return model(prompt, images, schema, temperature)
@@ -579,7 +587,7 @@ def boxer(boxes):
     seen = {"names": [], "decide": None}
 
     def model(prompt, images, schema, temperature=0):
-        if schema is pipeline.NAME_SCHEMA:
+        if schema is closeups.NAME_SCHEMA:
             seen["names"].append(prompt)
             return json.dumps({"name": "unsure"})
 
@@ -587,7 +595,7 @@ def boxer(boxes):
             seen["decide"] = prompt
             return json.dumps({"verdict": "refuse", "reason": "no"})
 
-        if schema is pipeline.BOX_SCHEMA:
+        if schema is detect.BOX_SCHEMA:
             return json.dumps({"objects": boxes})
 
         return json.dumps({"objects": []})
@@ -636,14 +644,14 @@ def guarded(decision="go on", boxes=SCENE_01_BOXES, mark=1):
     lock = threading.Lock()
 
     def model(prompt, images, schema, temperature=0):
-        if schema is pipeline.PRECHECK_SCHEMA:
+        if schema is safety.PRECHECK_SCHEMA:
             with lock:
                 seen["prechecks"] += 1
 
             return json.dumps({"reason": "throwing is uncontrolled",
                                "decision": decision})
 
-        if schema is pipeline.BOX_SCHEMA:
+        if schema is detect.BOX_SCHEMA:
             return json.dumps({"objects": boxes})
 
         if "verdict" in schema.get("properties", {}):
@@ -721,10 +729,10 @@ def planning(*replies, boxes=None):
 
     def model(prompt, images, schema, temperature=0):
         props = schema.get("properties", {})
-        if schema is pipeline.BOX_SCHEMA:
+        if schema is detect.BOX_SCHEMA:
             return json.dumps({"objects": boxes})
 
-        if schema is pipeline.PRECHECK_SCHEMA:
+        if schema is safety.PRECHECK_SCHEMA:
             return json.dumps({"reason": "fine", "decision": "go on"})
 
         if "moves" in props:
@@ -870,8 +878,8 @@ class PerceptionSeam(unittest.TestCase):
     def named_marks(self, scene):
         """Marks with neighbours, and the ground-truth name under each."""
         sg = SceneGT(DATA, DATA / "ground_truth", scene)
-        marks = pipeline.find_marks(sg.scene.rgb)
-        pipeline.add_neighbours(sg.scene, marks)
+        marks = opencv_marks.find_marks(sg.scene.rgb)
+        measure.add_neighbours(sg.scene, marks)
         return marks, {m["id"]: sg.object_at(m["pixel"]) for m in marks}
 
     def test_nearest_red_gear_to_the_mandarin(self):
@@ -914,18 +922,18 @@ class PerceptionSeam(unittest.TestCase):
         # none may be called too wide.
         for scene in sorted({g["scene"] for g in GT}):
             sg = SceneGT(DATA, DATA / "ground_truth", scene)
-            for m in pipeline.find_marks(sg.scene.rgb):
+            for m in opencv_marks.find_marks(sg.scene.rgb):
                 name = sg.object_at(m["pixel"])
                 if name:
-                    width = pipeline.width_mm(sg.scene, m)
-                    self.assertLess(width, pipeline.TOO_WIDE_MM,
+                    width = measure.width_mm(sg.scene, m)
+                    self.assertLess(width, measure.TOO_WIDE_MM,
                                     f"{scene} {name}")
 
         # Scene 08's widest object is the plate; it is not labelled.
         sg = SceneGT(DATA, DATA / "ground_truth", "scene_08")
-        widths = [pipeline.width_mm(sg.scene, m)
-                  for m in pipeline.find_marks(sg.scene.rgb)]
-        self.assertGreater(max(widths), pipeline.TOO_WIDE_MM)
+        widths = [measure.width_mm(sg.scene, m)
+                  for m in opencv_marks.find_marks(sg.scene.rgb)]
+        self.assertGreater(max(widths), measure.TOO_WIDE_MM)
 
 
 if __name__ == "__main__":
