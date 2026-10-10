@@ -1,0 +1,976 @@
+{
+    "team": "path_b_wahyu",
+    "results": [
+        {
+            "instruction_id": "scene_01_i1",
+            "target_pixel": [
+                367,
+                1188
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_cube",
+                    "pixel": [
+                        367,
+                        1188
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_01_i2",
+            "target_pixel": [
+                783,
+                1044
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "yellow_gear",
+                    "pixel": [
+                        783,
+                        1044
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_01_i3",
+            "target_pixel": null,
+            "actions": [
+                {
+                    "action": "ask_user",
+                    "question": "Which object is closest to the mug?"
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_01_i4",
+            "target_pixel": null,
+            "actions": [
+                {
+                    "action": "refuse",
+                    "reason": "Grey tray and black tray are not visible in the image.",
+                    "instruction_id": 5,
+                    "actions_data": [
+                        {
+                            "action": "refuse",
+                            "reason": "No blue cube is visible in the image."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_02_i1",
+            "target_pixel": [
+                2098,
+                956
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "mandarin",
+                    "pixel": [
+                        2098,
+                        956
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_02_i2",
+            "target_pixel": [
+                1625,
+                467
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_cube",
+                    "pixel": [
+                        1625,
+                        467
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "grey_tray",
+                    "pixel": [
+                        1224,
+                        1569
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_02_i3",
+            "target_pixel": null,
+            "actions": [
+                {
+                    "action": "ask_user",
+                    "question": "Which object to the left of the mug is eligible?"
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_02_i4",
+            "target_pixel": [
+                2098,
+                956
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "mandarin",
+                    "pixel": [
+                        2098,
+                        956
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "plate",
+                    "pixel": [
+                        1508,
+                        1296
+                    ]
+                },
+                {
+                    "action": "pick",
+                    "object": "red_cube",
+                    "pixel": [
+                        1625,
+                        467
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "grey_tray",
+                    "pixel": [
+                        1224,
+                        1569
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_02_i5",
+            "target_pixel": null,
+            "actions": [
+                {
+                    "action": "refuse",
+                    "reason": "Physical impossibility: plate cannot be placed in mug due to size mismatch and geometry."
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_03_i1",
+            "target_pixel": [
+                1875,
+                1266
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "yellow_gear",
+                    "pixel": [
+                        1875,
+                        1266
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_03_i2",
+            "target_pixel": [
+                1474,
+                891
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_gear",
+                    "pixel": [
+                        1474,
+                        891
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_03_i3",
+            "target_pixel": [
+                2127,
+                893
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_gear",
+                    "pixel": [
+                        2127,
+                        893
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_03_i4",
+            "target_pixel": [
+                1474,
+                891
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_gear",
+                    "pixel": [
+                        1474,
+                        891
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "grey_tray",
+                    "pixel": [
+                        1958,
+                        1638
+                    ]
+                },
+                {
+                    "action": "pick",
+                    "object": "red_gear",
+                    "pixel": [
+                        2127,
+                        893
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "grey_tray",
+                    "pixel": [
+                        1958,
+                        1638
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_03_i5",
+            "target_pixel": [
+                1474,
+                891
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_gear",
+                    "pixel": [
+                        1474,
+                        891
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_04_i1",
+            "target_pixel": [
+                1851,
+                1772
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "white_part",
+                    "pixel": [
+                        1851,
+                        1772
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_04_i2",
+            "target_pixel": [
+                2174,
+                1567
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "mug",
+                    "pixel": [
+                        2174,
+                        1567
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "grey_tray",
+                    "pixel": [
+                        521,
+                        10
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_04_i3",
+            "target_pixel": [
+                1684,
+                426
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "grey_part",
+                    "pixel": [
+                        1684,
+                        426
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_04_i4",
+            "target_pixel": [
+                1518,
+                1249
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "white_cover",
+                    "pixel": [
+                        1518,
+                        1249
+                    ]
+                },
+                {
+                    "object": "grey_tray",
+                    "pixel": [
+                        521,
+                        10
+                    ]
+                },
+                {
+                    "action": "pick",
+                    "object": "grey_part_2",
+                    "pixel": [
+                        2061,
+                        410
+                    ]
+                },
+                {
+                    "object": "grey_tray",
+                    "pixel": [
+                        521,
+                        10
+                    ]
+                },
+                {
+                    "action": "pick",
+                    "object": "grey_part_3",
+                    "pixel": [
+                        1704,
+                        328
+                    ]
+                },
+                {
+                    "object": "grey_tray",
+                    "pixel": [
+                        521,
+                        10
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_04_i5",
+            "target_pixel": [
+                1851,
+                1772
+            ],
+            "actions": [
+                {
+                    "action": "throw",
+                    "object": "white_part",
+                    "pixel": [
+                        1851,
+                        1772
+                    ]
+                },
+                {
+                    "action": "refuse",
+                    "reason": "Robotic system has no capability to 'throw' objects; task cannot be completed with allowed action set"
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_05_i1",
+            "target_pixel": [
+                1481,
+                1137
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "banana",
+                    "pixel": [
+                        1481,
+                        1137
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_05_i2",
+            "target_pixel": [
+                2174,
+                942
+            ],
+            "actions": [
+                {
+                    "action": "place",
+                    "object": "banana",
+                    "pixel": [
+                        2174,
+                        942
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_05_i3",
+            "target_pixel": [
+                2149,
+                834
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "mandarin",
+                    "pixel": [
+                        2149,
+                        834
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_05_i4",
+            "target_pixel": [
+                2240,
+                1188
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "grey_part",
+                    "pixel": [
+                        2240,
+                        1188
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "grey_tray",
+                    "pixel": [
+                        245,
+                        307
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_05_i5",
+            "target_pixel": null,
+            "actions": [
+                {
+                    "action": "ask_user",
+                    "question": "Which object do you mean?"
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_06_i1",
+            "target_pixel": [
+                1895,
+                1477
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_cube",
+                    "pixel": [
+                        1895,
+                        1477
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_06_i2",
+            "target_pixel": [
+                1728,
+                846
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "yellow_gear",
+                    "pixel": [
+                        1728,
+                        846
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_06_i3",
+            "target_pixel": [
+                1503,
+                1186
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_gear",
+                    "pixel": [
+                        1503,
+                        1186
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_06_i4",
+            "target_pixel": [
+                1503,
+                1186
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_gear",
+                    "pixel": [
+                        1503,
+                        1186
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "yellow_gear",
+                    "pixel": [
+                        1728,
+                        846
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "red_gear",
+                    "pixel": [
+                        1689,
+                        1030
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_06_i5",
+            "target_pixel": [
+                1689,
+                1030
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_gear",
+                    "pixel": [
+                        1689,
+                        1030
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "red_gear",
+                    "pixel": [
+                        1444,
+                        983
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_07_i1",
+            "target_pixel": [
+                441,
+                1270
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_cube",
+                    "pixel": [
+                        441,
+                        1270
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_07_i2",
+            "target_pixel": [
+                820,
+                1403
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "yellow_gear",
+                    "pixel": [
+                        820,
+                        1403
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "black_tray",
+                    "pixel": [
+                        1958,
+                        1946
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_07_i3",
+            "target_pixel": null,
+            "actions": [
+                {
+                    "action": "ask_user",
+                    "question": "There is no object strictly to the left of the yellow gear in the image."
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_07_i4",
+            "target_pixel": null,
+            "actions": [
+                {
+                    "action": "ask_user",
+                    "question": "No red gear visible to put under the mug in the black tray."
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_07_i5",
+            "target_pixel": null,
+            "actions": [
+                {
+                    "action": "ask_user",
+                    "question": "No red gear visible in the image to pick up without moving the mug."
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_08_i1",
+            "target_pixel": [
+                842,
+                1448
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "yellow_gear",
+                    "pixel": [
+                        842,
+                        1448
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_08_i2",
+            "target_pixel": [
+                796,
+                641
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "small_white_part",
+                    "pixel": [
+                        796,
+                        641
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_08_i3",
+            "target_pixel": [
+                1736,
+                666
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_cube",
+                    "pixel": [
+                        1736,
+                        666
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_08_i4",
+            "target_pixel": [
+                1422,
+                502
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_gear_left",
+                    "pixel": [
+                        1422,
+                        502
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "grey_tray",
+                    "pixel": [
+                        424,
+                        1024
+                    ]
+                },
+                {
+                    "action": "pick",
+                    "object": "red_gear_right",
+                    "pixel": [
+                        2120,
+                        483
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "grey_tray",
+                    "pixel": [
+                        424,
+                        1024
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_08_i5",
+            "target_pixel": null,
+            "actions": [
+                {
+                    "action": "refuse",
+                    "reason": "The red cube is on top of two red gears; not directly movable without disturbing them. No valid 'push off' point identified in image."
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_09_i1",
+            "target_pixel": [
+                644,
+                1460
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "mandarin",
+                    "pixel": [
+                        644,
+                        1460
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_09_i2",
+            "target_pixel": [
+                717,
+                1311
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_gear",
+                    "pixel": [
+                        717,
+                        1311
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_09_i3",
+            "target_pixel": [
+                754,
+                618
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "grey_part",
+                    "pixel": [
+                        754,
+                        618
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_09_i4",
+            "target_pixel": [
+                754,
+                618
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "grey_part",
+                    "pixel": [
+                        754,
+                        618
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "grey_part",
+                    "pixel": [
+                        1312,
+                        897
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_09_i5",
+            "target_pixel": [
+                644,
+                1460
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "mandarin",
+                    "pixel": [
+                        644,
+                        1460
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "plate",
+                    "pixel": [
+                        370,
+                        631
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_10_i1",
+            "target_pixel": [
+                791,
+                1550
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "yellow_gear",
+                    "pixel": [
+                        791,
+                        1550
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_10_i2",
+            "target_pixel": [
+                441,
+                1624
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "mandarin",
+                    "pixel": [
+                        441,
+                        1624
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "plate",
+                    "pixel": [
+                        1714,
+                        1276
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_10_i3",
+            "target_pixel": [
+                722,
+                1313
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_gear",
+                    "pixel": [
+                        722,
+                        1313
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_10_i4",
+            "target_pixel": [
+                262,
+                1214
+            ],
+            "actions": [
+                {
+                    "action": "pick",
+                    "object": "red_gear",
+                    "pixel": [
+                        262,
+                        1214
+                    ]
+                },
+                {
+                    "action": "place",
+                    "object": "plate",
+                    "pixel": [
+                        1714,
+                        1276
+                    ]
+                }
+            ]
+        },
+        {
+            "instruction_id": "scene_10_i5",
+            "target_pixel": null,
+            "actions": [
+                {
+                    "action": "refuse",
+                    "reason": "Cannot take the mug out of your hand as you are currently holding it in the image and no action can be taken to remove it from your own grasp in this scenario"
+                }
+            ]
+        }
+    ]
+}
