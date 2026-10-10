@@ -1,7 +1,9 @@
-"""Tests at the run() seam and the Apertus client, with fakes in place of
-Apertus.
+"""Tests for Path B, with fakes in place of Apertus.
 
-    .venv/bin/python -m unittest pipelines/path_b_randy_nocrop/test_pathb.py
+The pipeline is tested through ``pipeline.run()``, the Apertus client
+against a fake HTTP server. No real server is needed:
+
+    .venv/bin/python -m unittest pipelines/path_b_randy_nocrop/test_pipeline.py
 """
 import json
 import sys
@@ -27,7 +29,13 @@ GT_FILE = DATA / "ground_truth" / "ground_truth.json"
 GT = json.loads(GT_FILE.read_text())["instructions"]
 
 
+def nothing(prompt, images, schema, temperature=0):
+    """A model that finds nothing: every instruction ends refused."""
+    return "{}"
+
+
 def flaky(prompt, images, schema, temperature=0):
+    """A model that times out on one instruction and talks nonsense."""
     if "red cube" in prompt:
         raise TimeoutError("model too slow")
 
@@ -35,32 +43,38 @@ def flaky(prompt, images, schema, temperature=0):
 
 
 def one_scene(scene, tmp):
-    """Make `tmp` a scenes folder holding only `scene`."""
-    d = Path(tmp)
-    (d / scene).symlink_to(DATA / scene)
-    (d / "calibration.json").symlink_to(DATA / "calibration.json")
-    return d
+    """Make ``tmp`` a scenes folder holding only ``scene``."""
+    folder = Path(tmp)
+    (folder / scene).symlink_to(DATA / scene)
+    (folder / "calibration.json").symlink_to(DATA / "calibration.json")
+    return folder
 
 
 class PipelineSeam(unittest.TestCase):
+    """Every instruction gets a valid answer, whatever the model does."""
+
     def test_every_instruction_gets_a_schema_valid_answer(self):
-        sub = pipeline.run(DATA, apertus.mock)
-        got = {r["instruction_id"]: r for r in sub["results"]}
-        self.assertEqual(set(got), {g["instruction_id"] for g in GT})
-        for r in got.values():
-            self.assertEqual(answer_type(r), ("refuse", None))
+        sub = pipeline.run(DATA, nothing)
+        got = {result["instruction_id"]: result
+               for result in sub["results"]}
+        self.assertEqual(set(got), {truth["instruction_id"] for truth in GT})
+        for result in got.values():
+            self.assertEqual(answer_type(result), ("refuse", None))
 
     def test_timeouts_and_garbage_still_give_schema_valid_answers(self):
         with tempfile.TemporaryDirectory() as t:
             sub = pipeline.run(one_scene("scene_06", t), flaky)
         self.assertEqual(len(sub["results"]), 5)
-        for r in sub["results"]:
-            self.assertIsNone(answer_type(r)[1], r)
+        for result in sub["results"]:
+            self.assertIsNone(answer_type(result)[1], result)
 
 
 class FakeServer(BaseHTTPRequestHandler):
-    """An OpenAI-style endpoint: busy for the first `busy` requests,
-    slow, and counting how many requests are in flight at once."""
+    """A slow OpenAI-style endpoint that records what it is sent.
+
+    It answers 429 to the first ``busy`` requests, replies ``reply`` to
+    the others, and counts the most requests in flight at once.
+    """
     busy = 0
     seen = 0
     in_flight = 0
@@ -95,11 +109,14 @@ class FakeServer(BaseHTTPRequestHandler):
         self.wfile.write(body.encode())
 
     def log_message(self, *args):
-        pass
+        """Keep the test output quiet."""
 
 
 class ApertusClient(unittest.TestCase):
+    """The client against a fake server: retries, limits, thinking."""
+
     def serve(self, busy=0, reply="ok"):
+        """Start a fake server; return its handler class and its URL."""
         handler = type("Server", (FakeServer,), {
             "busy": busy, "seen": 0, "in_flight": 0, "most": 0,
             "lock": threading.Lock(), "reply": reply, "bodies": []})
@@ -110,19 +127,20 @@ class ApertusClient(unittest.TestCase):
         return handler, url
 
     def setUp(self):
+        """Make the retry waits short for the test."""
         waits = apertus.RETRY_WAITS
         apertus.RETRY_WAITS = (0.01,) * len(waits)
         self.addCleanup(setattr, apertus, "RETRY_WAITS", waits)
 
     def test_too_many_requests_is_retried(self):
         server, url = self.serve(busy=2)
-        call = apertus.apertus(url, "m", 64, 5)
+        call = apertus.server_model(url, "m", 64, 5)
         self.assertEqual(call("hi", [], {"type": "object"}), "ok")
         self.assertEqual(server.seen, 3)
 
     def test_no_more_calls_in_flight_than_allowed(self):
         server, url = self.serve()
-        call = apertus.apertus(url, "m", 64, 5, parallel=3)
+        call = apertus.server_model(url, "m", 64, 5, parallel=3)
         with ThreadPoolExecutor(12) as pool:
             for _ in range(12):
                 pool.submit(call, "hi", [], {"type": "object"})
@@ -134,7 +152,7 @@ class ApertusClient(unittest.TestCase):
         # A JSON schema would make Apertus skip its thinking.
         server, url = self.serve(reply="<|inner_prefix|>hmm, the cube"
                                        "<|inner_suffix|>Move the cube.")
-        think = apertus.apertus(url, "m", 64, 5, thinking=True)
+        think = apertus.server_model(url, "m", 64, 5, thinking=True)
         self.assertEqual(think("hi", [], None), "Move the cube.")
         sent = server.bodies[0]
         self.assertEqual(sent["chat_template_kwargs"],
@@ -144,7 +162,7 @@ class ApertusClient(unittest.TestCase):
 
     def test_cut_off_thinking_is_a_failed_call(self):
         _, url = self.serve(reply="<|inner_prefix|>hmm, the cube is")
-        think = apertus.apertus(url, "m", 64, 5, thinking=True)
+        think = apertus.server_model(url, "m", 64, 5, thinking=True)
         self.assertEqual(apertus.ask(think, "hi", [], None), "")
 
 
@@ -159,9 +177,17 @@ GREY_TRAY_BOX = {"kind": "grey part", "bounding_box": [0, 30, 525, 830]}
 
 
 def planning(*replies, boxes=None, decision="go on"):
-    """Return a fake that answers the box call with `boxes` (scene_01's by
-    default), the pre-check with `decision`, and the planner with
-    `replies` in turn (the last one repeats)."""
+    """Build a fake Apertus for one scene.
+
+    Args:
+        *replies: The planner's replies, in turn; the last one repeats.
+        boxes: The box call's objects; scene_01's when None.
+        decision: The pre-check's decision, "go on" or "refuse".
+
+    Returns:
+        The model function, with ``seen``: the planner's prompts and
+        schemas, and how many pre-checks were asked.
+    """
     boxes = SCENE_01_BOXES if boxes is None else boxes
     seen = {"prompts": [], "schemas": [], "prechecks": 0}
     lock = threading.Lock()
@@ -180,27 +206,32 @@ def planning(*replies, boxes=None, decision="go on"):
         with lock:
             seen["prompts"].append(prompt)
             seen["schemas"].append(schema)
-            n = prompt.count("YOUR ANSWER")
+            retry = prompt.count("YOUR ANSWER")
 
-        return json.dumps(replies[min(n, len(replies) - 1)])
+        return json.dumps(replies[min(retry, len(replies) - 1)])
 
     model.seen = seen
     return model
 
 
 def moves(*pairs):
+    """Build a planner reply that plans ``(object, to)`` moves."""
     return {"thinking": "...", "decision": "plan", "message": "",
-            "moves": [{"object": o, "to": t} for o, t in pairs]}
+            "moves": [{"object": object_id, "to": to}
+                      for object_id, to in pairs]}
 
 
 def scene_ids(model):
-    """The object ids the planner was allowed to name."""
+    """Return the object ids the planner was allowed to name."""
     return set(model.seen["schemas"][0]["properties"]["moves"]["items"][
         "properties"]["object"]["enum"])
 
 
 class Detection(unittest.TestCase):
+    """Apertus's boxes become the scene's objects."""
+
     def ids_for(self, boxes):
+        """Return the object ids the planner sees for these boxes."""
         model = planning(moves(("grey_tray", None)), boxes=boxes)
         with tempfile.TemporaryDirectory() as t:
             pipeline.run(one_scene("scene_01", t), model)
@@ -222,23 +253,26 @@ class Detection(unittest.TestCase):
 
 
 class SafetyCheck(unittest.TestCase):
+    """Unsafe instructions are refused before planning."""
+
     def results(self, model, **switches):
+        """Run scene_01; return each answer's first action."""
         with tempfile.TemporaryDirectory() as t:
             sub = pipeline.run(one_scene("scene_01", t), model, **switches)
 
-        return [r["actions"][0] for r in sub["results"]]
+        return [result["actions"][0] for result in sub["results"]]
 
     def test_an_unsafe_instruction_is_refused_before_planning(self):
         model = planning(moves(("red_cube", None)), decision="refuse")
         first = self.results(model)
-        self.assertTrue(all(a["action"] == "refuse" for a in first))
+        self.assertTrue(all(action["action"] == "refuse" for action in first))
         self.assertIn("throwing is uncontrolled", first[0]["reason"])
         self.assertEqual(model.seen["prompts"], [])
 
     def test_a_safe_instruction_goes_on_to_the_planner(self):
         model = planning(moves(("red_cube", None)))
         first = self.results(model)
-        self.assertTrue(all(a["action"] == "pick" for a in first))
+        self.assertTrue(all(action["action"] == "pick" for action in first))
         self.assertEqual(model.seen["prechecks"], 5)
 
     def test_safety_off_asks_no_precheck(self):
@@ -258,7 +292,10 @@ class SafetyCheck(unittest.TestCase):
 
 
 class Planner(unittest.TestCase):
+    """The scene graph, the planner, its checker and thinking."""
+
     def run_scene_01(self, model, **switches):
+        """Run scene_01; return the answers."""
         with tempfile.TemporaryDirectory() as t:
             sub = pipeline.run(one_scene("scene_01", t), model,
                                **switches)
@@ -289,7 +326,8 @@ class Planner(unittest.TestCase):
     def test_a_broken_rule_goes_back_to_apertus_to_correct(self):
         model = planning(moves(("mug", "mug")), moves(("mug", "black_tray")))
         got = self.run_scene_01(model)
-        retried = [p for p in model.seen["prompts"] if "YOUR ANSWER" in p]
+        retried = [prompt for prompt in model.seen["prompts"]
+                   if "YOUR ANSWER" in prompt]
         self.assertTrue(retried)
         self.assertIn('"to" is where mug is put down', retried[0])
         self.assertEqual(got[0]["actions"][1]["object"], "black_tray")
@@ -300,7 +338,7 @@ class Planner(unittest.TestCase):
         self.assertIn("No valid plan", got[0]["actions"][0]["reason"])
 
     def test_apertus_finds_the_objects_opencv_does_not(self):
-        # A box on the empty black mat: no OpenCV mark there.
+        # A box on the empty black mat, where no colour blob would be.
         banana = {"kind": "banana", "bounding_box": [700, 600, 800, 700]}
         model = planning(moves(("banana", None)),
                          boxes=SCENE_01_BOXES + [banana])
@@ -346,7 +384,8 @@ class Planner(unittest.TestCase):
 
         model = planning(moves(("mug", "mug")), moves(("mug", "black_tray")))
         got = self.run_scene_01(model, thinker=thinker)
-        retried = [p for p in model.seen["prompts"] if "YOUR ANSWER" in p]
+        retried = [prompt for prompt in model.seen["prompts"]
+                   if "YOUR ANSWER" in prompt]
         self.assertTrue(retried)
         self.assertNotIn("Hold the mug", retried[0])
         self.assertEqual(got[0]["actions"][1]["object"], "black_tray")

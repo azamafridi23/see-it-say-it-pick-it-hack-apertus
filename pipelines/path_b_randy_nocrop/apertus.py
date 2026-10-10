@@ -1,10 +1,9 @@
-"""The Apertus client: an OpenAI-compatible chat call with retries and a
-cap on calls in flight, and `ask()`, which turns any failure into an
-empty reply instead of a crash.
+"""Client for Apertus on an OpenAI-compatible chat server.
 
-A model is any function `model(prompt, images, schema, temperature)`
-that returns the reply text; `apertus()` makes one for a server, `mock`
-is one that refuses everything.
+A model is any function ``model(prompt, images, schema, temperature)``
+that returns the reply text. ``server_model()`` builds one for a server,
+and ``ask()`` wraps any model so that a failed call becomes an empty
+reply instead of an exception.
 """
 import json
 import sys
@@ -22,27 +21,44 @@ from baseline import encode
 RETRY_WAITS = (1, 2, 4, 8, 16)
 
 # Reply budgets in tokens. Thinking counts toward the budget: on a short
-# question Apertus thought for ~1,100 tokens before answering.
+# question Apertus thought for about 1,100 tokens before it answered.
 MAX_TOKENS = 800
 THINKING_MAX_TOKENS = 4000
 
-# Apertus's chat template wraps its thinking in these tokens; the server
-# has no reasoning parser, so they arrive inside the reply text.
+# Apertus's chat template ends its thinking with this token. The server
+# has no reasoning parser, so the thinking arrives inside the reply text.
 THINK_END = "<|inner_suffix|>"
 
+# What a failed model call raises: no server, a timeout or an HTTP error
+# (all OSErrors), or a reply that is not the expected JSON.
+MODEL_ERRORS = (OSError, ValueError, KeyError)
 
-def apertus(base_url, model, max_side, timeout, api_key="none", parallel=5,
-            thinking=False):
-    """Return a model function that calls an OpenAI-compatible server.
 
-    At most `parallel` calls are in flight at once, however many threads
-    ask; the hosted endpoint allows 5 per key.
+def server_model(base_url, model, max_side, timeout, api_key="none",
+                 parallel=5, thinking=False):
+    """Build a model function that calls an OpenAI-compatible server.
 
-    With `thinking`, Apertus's chat template lets it think before it
-    answers (`enable_thinking`). The reply is free text, so no JSON schema
-    is sent: one would make it skip the thinking. The function returns
-    only the visible answer after the thinking, and raises ValueError
-    when the thinking was cut off before it ended.
+    Busy, failing and dropped calls are retried after the waits in
+    RETRY_WAITS. At most ``parallel`` calls are in flight at once, however
+    many threads call the function; the hosted endpoint allows 5 per key.
+
+    With ``thinking``, Apertus's chat template lets it think before it
+    answers (``enable_thinking``). No JSON schema is sent then, because a
+    schema makes Apertus skip the thinking.
+
+    Args:
+        base_url: The server's base URL, ending in ``/v1``.
+        model: The model name the server serves.
+        max_side: The longest side, in pixels, an image is resized to.
+        timeout: Seconds to wait for one reply.
+        api_key: The bearer token for the server.
+        parallel: The most calls in flight at once.
+        thinking: Whether Apertus thinks before it answers.
+
+    Returns:
+        A function ``call(prompt, images, schema, temperature=0)`` that
+        returns the reply text. With ``thinking``, it returns only the
+        visible answer after the thinking and ignores ``schema``.
     """
     url = base_url.rstrip("/") + "/chat/completions"
     headers = {"Content-Type": "application/json",
@@ -50,7 +66,20 @@ def apertus(base_url, model, max_side, timeout, api_key="none", parallel=5,
     gate = threading.BoundedSemaphore(parallel)
 
     def post(body):
-        """POST `body`, retrying busy or dropped calls; return the JSON."""
+        """Send one request, retrying busy or dropped calls.
+
+        Args:
+            body: The chat-completions request.
+
+        Returns:
+            The server's JSON reply.
+
+        Raises:
+            urllib.error.HTTPError: The server refused the request, or
+                stayed busy through every retry.
+            urllib.error.URLError: The server could not be reached through
+                every retry.
+        """
         data = json.dumps(body).encode()
         for wait in RETRY_WAITS + (None,):
             req = urllib.request.Request(url, data=data, headers=headers)
@@ -58,8 +87,8 @@ def apertus(base_url, model, max_side, timeout, api_key="none", parallel=5,
                 with gate, urllib.request.urlopen(req, timeout=timeout) as r:
                     return json.loads(r.read())
 
-            except urllib.error.HTTPError as e:
-                busy = e.code == 429 or e.code >= 500
+            except urllib.error.HTTPError as error:
+                busy = error.code == 429 or error.code >= 500
                 if not busy or wait is None:
                     raise
 
@@ -70,9 +99,24 @@ def apertus(base_url, model, max_side, timeout, api_key="none", parallel=5,
             time.sleep(wait)
 
     def call(prompt, images, schema, temperature=0):
+        """Ask Apertus one question.
+
+        Args:
+            prompt: The question text.
+            images: RGB images sent before the text.
+            schema: The JSON schema the reply must follow.
+            temperature: The sampling temperature.
+
+        Returns:
+            The reply text.
+
+        Raises:
+            ValueError: With ``thinking``, the thinking ran out of tokens
+                before it ended.
+        """
         content = []
-        for im in images:
-            b64 = encode(im, max_side)[0]
+        for image in images:
+            b64 = encode(image, max_side)[0]
             content.append({"type": "image_url", "image_url": {
                 "url": f"data:image/jpeg;base64,{b64}"}})
         content.append({"type": "text", "text": prompt})
@@ -103,43 +147,25 @@ def apertus(base_url, model, max_side, timeout, api_key="none", parallel=5,
     return call
 
 
-def mock(prompt, images, schema, temperature=0):
-    """A model that finds nothing: every instruction ends refused."""
-    return "{}"
-
-
-# Put before the prompt when the clean photo goes along.
-TWO_IMAGES_NOTE = """\
-The first photo has the numbered marks; the second is the same photo \
-without the marks.
-
-"""
-
-# What a failed model call raises: no server, timeout, HTTP error (all
-# OSErrors), or a reply that is not the expected JSON.
-MODEL_ERRORS = (OSError, ValueError, KeyError)
-
-
 def ask(model, prompt, images, schema, temperature=0):
-    """Make one model call; a failure becomes an empty reply, not a crash.
+    """Make one model call, turning a failure into an empty reply.
 
-    An empty reply turns into a safe refusal. With two images (marked and
-    clean) the prompt says which is which; if that call fails, it is
-    retried once with the marked image only.
+    Every stage reads an empty reply safely: the box call finds no
+    objects, the pre-check lets the instruction go on, and the checker
+    rejects the planner's answer.
+
+    Args:
+        model: A model function, such as one built by ``server_model()``.
+        prompt: The question text.
+        images: RGB images sent before the text.
+        schema: The JSON schema the reply must follow, or None.
+        temperature: The sampling temperature.
+
+    Returns:
+        The reply text, or ``""`` when the call failed.
     """
-    if len(images) > 1:
-        try:
-            return model(TWO_IMAGES_NOTE + prompt, images, schema,
-                         temperature)
-        except MODEL_ERRORS as e:
-            # ponytail: retried on every call when the server takes one
-            # image; pass --no-clean-image then, to save the extra call.
-            print(f"  two images failed ({e!r}); retrying with one",
-                  file=sys.stderr)
-            images = images[:1]
-
     try:
         return model(prompt, images, schema, temperature)
-    except MODEL_ERRORS as e:
-        print(f"  model call failed: {e!r}", file=sys.stderr)
+    except MODEL_ERRORS as error:
+        print(f"  model call failed: {error!r}", file=sys.stderr)
         return ""

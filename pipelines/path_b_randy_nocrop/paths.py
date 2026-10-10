@@ -1,5 +1,8 @@
-"""The repository root on sys.path, so the organisers' `starter` and
-`baseline` modules import from any working directory."""
+"""Put the organisers' ``starter`` and ``baseline`` folders on sys.path.
+
+Importing this module first lets the other modules import ``scene_io``
+and ``baseline`` from any working directory.
+"""
 import sys
 from pathlib import Path
 

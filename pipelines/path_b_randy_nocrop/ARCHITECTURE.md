@@ -15,13 +15,13 @@ The code is in this folder, one module per job:
 | File | Job |
 |---|---|
 | `pipeline.py` | wiring and the command line only |
-| `detect.py` | step 1–2: Apertus finds the objects, boxes corrected into marks |
+| `detect.py` | steps 1–2: Apertus finds the objects; boxes corrected into objects with a target pixel |
 | `measure.py` | step 3: OpenCV measuring (sizes, gaps, tray, what lies on top) |
 | `planner.py` | steps 4, 6, 7: scene graph, Path A's planner, checker |
 | `safety.py` | step 5: the pre-check |
 | `apertus.py` | the Apertus client: retries, calls in flight, safe `ask()` |
 | `paths.py` | puts the organisers' `starter` and `baseline` on the path |
-| `test_pathb.py` | the tests, at the `run()` seam and the client |
+| `test_pipeline.py` | the tests, at the `run()` seam and the client |
 
 The older designs in the results table (OpenCV colour blobs, close-up
 naming, the voting Decide stage) were removed from the code once this
@@ -201,7 +201,6 @@ first picked object's corrected box centre.
 | `--no-widths` | leave the measured sizes out of the scene graph |
 | `--no-gaps` | leave the measured gaps out (no `nearest_gap_mm`, no `touching`) |
 | `--thinking` | the planner first thinks in Apertus's thinking mode, then answers (off: worse and 7× slower, see below) |
-| `--mock` | no model: every instruction ends refused (checks the loop and the format) |
 
 ## Results on the 10 public scenes
 

@@ -1,20 +1,24 @@
-"""Path A's planner, ported to Path B: Apertus reads a scene graph built
-from the marks and one instruction, and answers a plan, a question or a
-refusal.
+"""Planning by Apertus on a scene graph, with a checker in code.
 
-Apertus names objects by id and never writes coordinates; its reply is
-constrained to a JSON schema whose ids are this scene's, checked by code
-against the graph, and sent back with the error when it breaks a rule.
-From pipelines/path_a_azam/planner.py on main; the graph comes from
-OpenCV marks and Apertus boxes instead of SAM 3 and depth, so it has
-`touching` where Path A has the depth-based `maybe_on`.
+Apertus reads the scene graph and one instruction and answers with a
+plan, a question or a refusal. It names objects by id and never writes
+coordinates: its reply is constrained to a JSON schema whose ids are this
+scene's, then checked against the graph, and sent back with the error
+when it breaks a rule.
+
+Ported from Path A (``pipelines/path_a_azam/planner.py`` on main). Path B
+builds the graph from Apertus's boxes instead of SAM 3 and depth, so it
+has ``touching`` where Path A has the depth-based ``maybe_on``.
 """
 import json
 
+
+# How often an answer that breaks a rule goes back to Apertus.
 MAX_RETRIES = 2
 
-# With thinking: Apertus first thinks the task through in free text, then
-# its conclusion goes into the JSON call.
+# With thinking, Apertus first thinks the task through in free text
+# (THINK_NOTE); its conclusion then goes into the JSON call
+# (REASONED_NOTE).
 THINK_NOTE = """
 
 Think it through first. Then write your decision and, for a plan, the \
@@ -27,14 +31,17 @@ YOUR REASONING
 
 Give the answer as JSON, following your reasoning."""
 
-# Touching a hand: a gap to a hand mark at most this many cm.
+# An object at most this many centimetres from a hand is touching it.
 HAND_GAP_CM = 0.3
 
-# Never picked up: plates and saucers are too wide (organisers' answer),
-# a hand is a person.
+# Kinds that are never picked up: the plate and the saucer are the only
+# objects too wide for the gripper (organisers' answer), and a hand is a
+# person. Trays are added to the graph as places, not as objects.
 UNPICKABLE = {"plate", "saucer", "hand"}
 
-SYSTEM = """\
+# The planner's instructions, as in Path A, with ``touching`` in place of
+# its depth-based ``maybe_on``. The examples use invented objects.
+PLANNER_PROMPT = """\
 You plan the actions of a robot arm that works at a table. A camera looks \
 straight down at the table.
 A vision system has described the scene as JSON. A person gives one \
@@ -134,6 +141,7 @@ left or the right one?"
 "blue_block_1", "to": "grey_tray"}, {"object": "blue_block_2", "to": \
 "grey_tray"}]"""
 
+# The two trays, added to every graph as places to put things.
 TRAYS = [
     {"id": "grey_tray", "type": "grey tray", "pickable": False,
      "note": "the plastic tray on the left; a place to put things"},
@@ -142,86 +150,118 @@ TRAYS = [
 ]
 
 
-def scene_graph(marks, black_x):
-    """Return the scene as Path A's planner reads it, from named marks.
+def scene_graph(objects, black_mat_left):
+    """Build the scene graph the planner reads, from the measured objects.
 
-    Marks need `name`, `pixel`, `colour`; `width_mm`, `gaps` and `on`
-    are used when present. A mark right of `black_x` (the black mat's
-    left edge, px) is on the black tray, any other in the grey tray.
+    Each object gets an id from its kind, numbered left to right when
+    there are several (``red_gear_1``, ``red_gear_2``). An object right of
+    ``black_mat_left`` is on the black tray, any other in the grey tray.
+
+    Args:
+        objects: The objects, see ``detect.find_objects()``, with
+            ``colour`` and, when measured, ``width_mm``, ``gaps`` and
+            ``on``.
+        black_mat_left: The black mat's left edge, in pixels.
+
+    Returns:
+        ``{"hand_present", "left_to_right", "top_to_bottom", "objects"}``,
+        the objects including the two trays.
     """
-    types = [m["name"] for m in marks]
-    ids = []
-    for m, t in zip(marks, types):
-        base = t.replace(" ", "_")
-        if types.count(t) > 1:
-            n = sum(1 for o in types[:len(ids)] if o == t) + 1
-            ids.append(f"{base}_{n}")
+    kinds = [obj["kind"] for obj in objects]
+    graph_ids = []
+    for kind in kinds:
+        base = kind.replace(" ", "_")
+        if kinds.count(kind) > 1:
+            number = kinds[:len(graph_ids)].count(kind) + 1
+            graph_ids.append(f"{base}_{number}")
         else:
-            ids.append(base)
+            graph_ids.append(base)
 
-    by_mark = {m["id"]: i for m, i in zip(marks, ids)}
-    hands = {m["id"] for m, t in zip(marks, types) if t == "hand"}
+    id_of = {obj["id"]: graph_id for obj, graph_id in zip(objects, graph_ids)}
+    hands = {obj["id"] for obj in objects if obj["kind"] == "hand"}
 
-    objects = []
-    for m, oid, t in zip(marks, ids, types):
-        gaps = m.get("gaps", {})
-        o = {"id": oid, "type": t, "colour": m.get("colour"),
-             "pixel": m["pixel"], "size_mm": m.get("width_mm"),
-             "pickable": t not in UNPICKABLE,
-             "in": "black_tray" if m["pixel"][0] >= black_x
-             else "grey_tray",
-             "on": [by_mark[i] for i in m.get("on", [])],
-             "covered_by": [by_mark[o["id"]] for o in marks
-                            if m["id"] in o.get("on", [])]}
+    nodes = []
+    for obj, graph_id in zip(objects, graph_ids):
+        gaps = obj.get("gaps", {})
+        node = {"id": graph_id, "type": obj["kind"],
+                "colour": obj.get("colour"), "pixel": obj["pixel"],
+                "size_mm": obj.get("width_mm"),
+                "pickable": obj["kind"] not in UNPICKABLE,
+                "in": ("black_tray" if obj["pixel"][0] >= black_mat_left
+                       else "grey_tray"),
+                "on": [id_of[i] for i in obj.get("on", [])],
+                "covered_by": [id_of[other["id"]] for other in objects
+                               if obj["id"] in other.get("on", [])]}
 
-        o["touching"] = [by_mark[i] for i, cm in gaps.items()
-                         if cm == 0 and by_mark[i] not in o["on"]
-                         and by_mark[i] not in o["covered_by"]]
-        o["touching_hand"] = any(gaps.get(h, 99) <= HAND_GAP_CM
-                                 for h in hands if h != m["id"])
-        o["nearest_gap_mm"] = [[by_mark[i], round(10 * cm)] for cm, i in
-                               sorted((cm, i) for i, cm in gaps.items())]
-        objects.append(o)
+        node["touching"] = [id_of[i] for i, cm in gaps.items()
+                            if cm == 0 and id_of[i] not in node["on"]
+                            and id_of[i] not in node["covered_by"]]
+        node["touching_hand"] = any(gaps.get(hand, 99) <= HAND_GAP_CM
+                                    for hand in hands if hand != obj["id"])
+        node["nearest_gap_mm"] = [
+            [id_of[i], round(10 * cm)]
+            for cm, i in sorted((cm, i) for i, cm in gaps.items())]
+        nodes.append(node)
 
-    order = sorted(objects, key=lambda o: o["pixel"][1])
+    top_down = sorted(nodes, key=lambda node: node["pixel"][1])
     return {"hand_present": bool(hands),
-            "left_to_right": [o["id"] for o in objects],
-            "top_to_bottom": [o["id"] for o in order],
-            "objects": objects + TRAYS}
+            "left_to_right": [node["id"] for node in nodes],
+            "top_to_bottom": [node["id"] for node in top_down],
+            "objects": nodes + TRAYS}
 
 
-def describe(graph):
-    """The scene graph as Apertus reads it: empty facts left out."""
-    objs = []
-    for o in graph["objects"]:
-        if "pixel" not in o:
-            objs.append(dict(o))
+def prompt_view(graph):
+    """Shorten the scene graph for the prompt.
+
+    Pixels become ``position``, empty facts are left out, and each object
+    keeps its 5 nearest gaps.
+
+    Args:
+        graph: The scene graph, see ``scene_graph()``.
+
+    Returns:
+        The graph as Apertus reads it.
+    """
+    entries = []
+    for node in graph["objects"]:
+        if "pixel" not in node:
+            entries.append(dict(node))
             continue
 
-        d = {"id": o["id"], "type": o["type"], "colour": o["colour"],
-             "position": o["pixel"], "size_mm": o["size_mm"],
-             "pickable": o["pickable"], "in": o["in"]}
+        entry = {"id": node["id"], "type": node["type"],
+                 "colour": node["colour"], "position": node["pixel"],
+                 "size_mm": node["size_mm"], "pickable": node["pickable"],
+                 "in": node["in"]}
         for key in ("on", "covered_by", "touching"):
-            if o[key]:
-                d[key] = o[key]
+            if node[key]:
+                entry[key] = node[key]
 
-        if o["touching_hand"]:
-            d["touching_hand"] = True
+        if node["touching_hand"]:
+            entry["touching_hand"] = True
 
-        if o["nearest_gap_mm"]:
-            d["nearest_gap_mm"] = o["nearest_gap_mm"][:5]
+        if node["nearest_gap_mm"]:
+            entry["nearest_gap_mm"] = node["nearest_gap_mm"][:5]
 
-        objs.append(d)
+        entries.append(entry)
 
     return {"hand_present": graph["hand_present"],
             "left_to_right": graph["left_to_right"],
-            "top_to_bottom": graph["top_to_bottom"], "objects": objs}
+            "top_to_bottom": graph["top_to_bottom"], "objects": entries}
 
 
-def schema(graph):
-    """The reply format. Ids are this scene's, so Apertus cannot name an
-    object that is not there."""
-    ids = [o["id"] for o in graph["objects"]]
+def reply_schema(graph):
+    """Build the JSON schema of the planner's reply.
+
+    Ids are limited to this scene's, so Apertus cannot name an object that
+    is not there.
+
+    Args:
+        graph: The scene graph, see ``scene_graph()``.
+
+    Returns:
+        The JSON schema.
+    """
+    ids = [node["id"] for node in graph["objects"]]
     return {
         "type": "object", "additionalProperties": False,
         "required": ["thinking", "decision", "moves", "message"],
@@ -238,10 +278,18 @@ def schema(graph):
     }
 
 
-def check(reply, graph):
-    """None when the reply is usable, else what is wrong with it, worded
-    for Apertus to correct."""
-    objs = {o["id"]: o for o in graph["objects"]}
+def rule_error(reply, graph):
+    """Check a reply against the graph and the robot's rules.
+
+    Args:
+        reply: The planner's parsed reply.
+        graph: The scene graph, see ``scene_graph()``.
+
+    Returns:
+        None when the reply is usable, else what is wrong with it, worded
+        for Apertus to correct.
+    """
+    by_id = {node["id"]: node for node in graph["objects"]}
     decision = reply.get("decision")
     moves = reply.get("moves") or []
     message = (reply.get("message") or "").strip()
@@ -256,95 +304,124 @@ def check(reply, graph):
                 'decide "refuse" or "ask_user".')
 
     moved = set()
-    for n, m in enumerate(moves, 1):
-        oid, to = m.get("object"), m.get("to")
-        if oid not in objs or (to is not None and to not in objs):
-            bad = oid if oid not in objs else to
-            return (f'Move {n}: there is no object "{bad}". The ids are: '
-                    f'{", ".join(objs)}. If the instruction names something '
-                    'that is not on the table, decide "refuse".')
+    for number, move in enumerate(moves, 1):
+        object_id, to = move.get("object"), move.get("to")
+        if object_id not in by_id or (to is not None and to not in by_id):
+            unknown = object_id if object_id not in by_id else to
+            return (f'Move {number}: there is no object "{unknown}". The '
+                    f'ids are: {", ".join(by_id)}. If the instruction names '
+                    'something that is not on the table, decide "refuse".')
 
-        o = objs[oid]
-        if not o["pickable"]:
-            return (f"Move {n}: {oid} cannot be picked up (pickable is "
-                    'false). If the instruction needs that, decide '
-                    '"refuse".')
+        node = by_id[object_id]
+        if not node["pickable"]:
+            return (f"Move {number}: {object_id} cannot be picked up "
+                    '(pickable is false). If the instruction needs that, '
+                    'decide "refuse".')
 
-        if o.get("touching_hand"):
-            return (f"Move {n}: a person's hand is on {oid}. The robot "
-                    'must not move it: decide "refuse".')
+        if node.get("touching_hand"):
+            return (f"Move {number}: a person's hand is on {object_id}. The "
+                    'robot must not move it: decide "refuse".')
 
-        blocking = [c for c in o.get("covered_by", []) if c not in moved]
+        blocking = [c for c in node.get("covered_by", []) if c not in moved]
         if blocking:
-            return (f"Move {n}: {oid} is covered by {', '.join(blocking)}. "
-                    f"Move {', '.join(blocking)} aside first, or decide "
-                    '"refuse" if the instruction does not allow that.')
+            return (f"Move {number}: {object_id} is covered by "
+                    f"{', '.join(blocking)}. Move {', '.join(blocking)} "
+                    'aside first, or decide "refuse" if the instruction '
+                    "does not allow that.")
 
-        if to == oid:
-            return (f'Move {n}: "to" is where {oid} is put down, not the '
-                    "object itself. Give the id of a tray, plate or saucer.")
+        if to == object_id:
+            return (f'Move {number}: "to" is where {object_id} is put down, '
+                    "not the object itself. Give the id of a tray, plate or "
+                    "saucer.")
 
-        if to is None and n < len(moves):
-            return (f'Move {n}: {oid} is still in the gripper ("to" is '
-                    "null). Put it down before the next move.")
+        if to is None and number < len(moves):
+            return (f'Move {number}: {object_id} is still in the gripper '
+                    '("to" is null). Put it down before the next move.')
 
-        if to is not None and objs[to].get("type") == "hand":
-            return (f"Move {n}: the robot must not hand objects to a "
+        if to is not None and by_id[to].get("type") == "hand":
+            return (f"Move {number}: the robot must not hand objects to a "
                     'person: decide "refuse".')
 
-        moved.add(oid)
+        moved.add(object_id)
 
     return None
 
 
-def to_answer(iid, reply, graph):
-    """The challenge's answer format; target_pixel is the graph's pixel of
-    the first object picked."""
+def to_result(instruction_id, reply, graph):
+    """Turn a checked reply into the challenge's answer format.
+
+    Each move becomes a pick and, unless the object is held, a place. The
+    target pixel is the pixel of the first object picked.
+
+    Args:
+        instruction_id: The instruction's id.
+        reply: A reply that passed ``rule_error()``.
+        graph: The scene graph, see ``scene_graph()``.
+
+    Returns:
+        The answer.
+    """
     if reply["decision"] == "ask_user":
-        return {"instruction_id": iid, "target_pixel": None,
+        return {"instruction_id": instruction_id, "target_pixel": None,
                 "actions": [{"action": "ask_user",
                              "question": reply["message"].strip()}]}
 
     if reply["decision"] == "refuse":
-        return {"instruction_id": iid, "target_pixel": None,
+        return {"instruction_id": instruction_id, "target_pixel": None,
                 "actions": [{"action": "refuse",
                              "reason": reply["message"].strip()}]}
 
-    pixels = {o["id"]: o["pixel"] for o in graph["objects"] if "pixel" in o}
+    pixels = {node["id"]: node["pixel"] for node in graph["objects"]
+              if "pixel" in node}
     actions = []
-    for m in reply["moves"]:
-        for kind, oid in (("pick", m["object"]), ("place", m["to"])):
-            if oid is not None:
-                actions.append({"action": kind, "object": oid})
+    for move in reply["moves"]:
+        for action, object_id in (("pick", move["object"]),
+                                  ("place", move["to"])):
+            if object_id is not None:
+                actions.append({"action": action, "object": object_id})
 
-    return {"instruction_id": iid,
+    return {"instruction_id": instruction_id,
             "target_pixel": pixels[reply["moves"][0]["object"]],
             "actions": actions}
 
 
-def plan(ask, iid, text, graph, think=None):
-    """Return (answer, log). `ask(prompt, schema)` returns the reply text.
+def plan(ask_json, instruction_id, text, graph, ask_thinking=None):
+    """Plan one instruction, with retries when the checker rejects a reply.
 
-    With `think(prompt)`, Apertus first thinks the task through in free
-    text, and its conclusion goes along into the first JSON call; an
-    empty thought (a failed call) is left out. A reply that breaks a rule
-    goes back with the error, up to MAX_RETRIES times, without the
-    thinking: a wrong conclusion would anchor every retry. Then the
-    answer is a refusal.
+    A reply that breaks a rule goes back to Apertus with the error, up to
+    MAX_RETRIES times; after that the answer is a refusal. With
+    ``ask_thinking``, Apertus first thinks the task through in free text,
+    and its conclusion goes into the first attempt only: a wrong
+    conclusion would anchor every retry.
+
+    Args:
+        ask_json: ``ask_json(prompt, schema)`` returns Apertus's reply
+            text, constrained to ``schema``.
+        instruction_id: The instruction's id.
+        text: The instruction.
+        graph: The scene graph, see ``scene_graph()``.
+        ask_thinking: ``ask_thinking(prompt)`` returns Apertus's
+            conclusion after thinking, or ``""`` when the call failed;
+            None to skip thinking.
+
+    Returns:
+        ``(result, log)``: the result in the challenge's format, and a
+        record of every attempt.
     """
-    base = (f"{SYSTEM}\n\nSCENE\n{json.dumps(describe(graph))}\n\n"
-            f"INSTRUCTION\n{text}")
+    base = (f"{PLANNER_PROMPT}\n\nSCENE\n{json.dumps(prompt_view(graph))}"
+            f"\n\nINSTRUCTION\n{text}")
     prompt = base
-    log = {"instruction_id": iid, "instruction": text, "attempts": []}
-    if think:
-        notes = think(base + THINK_NOTE)
+    log = {"instruction_id": instruction_id, "instruction": text,
+           "attempts": []}
+    if ask_thinking:
+        notes = ask_thinking(base + THINK_NOTE)
         log["thinking"] = notes
         if notes:
             prompt = base + REASONED_NOTE.format(notes=notes)
 
     retries = ""
     for _ in range(MAX_RETRIES + 1):
-        reply_text = ask(prompt, schema(graph))
+        reply_text = ask_json(prompt, reply_schema(graph))
         try:
             reply = json.loads(reply_text)
         except (TypeError, json.JSONDecodeError):
@@ -354,18 +431,18 @@ def plan(ask, iid, text, graph, think=None):
             reply = None
 
         error = ("The answer was not valid JSON." if reply is None
-                 else check(reply, graph))
+                 else rule_error(reply, graph))
         log["attempts"].append({"reply": reply or reply_text,
                                 "error": error})
         if error is None:
-            return to_answer(iid, reply, graph), log
+            return to_result(instruction_id, reply, graph), log
 
         retries += (f"\n\nYOUR ANSWER\n{reply_text}\n\nThat answer cannot "
                     f"be used. {error}\nGive a corrected answer.")
         prompt = base + retries
 
     log["gave_up"] = True
-    return ({"instruction_id": iid, "target_pixel": None,
-             "actions": [{"action": "refuse", "reason": "No valid plan "
-                          "could be produced for this instruction."}]},
-            log)
+    refused = {"instruction_id": instruction_id, "target_pixel": None,
+               "actions": [{"action": "refuse", "reason": "No valid plan "
+                            "could be produced for this instruction."}]}
+    return refused, log

@@ -1,13 +1,15 @@
-"""The safety pre-check: Apertus reads the sentence alone, before any
-planning, and refuses unsafe or self-contradicting instructions."""
+"""Safety pre-check by Apertus, on the instruction alone.
+
+Before any planning, Apertus reads the sentence without the photo and
+refuses unsafe or self-contradicting instructions, so that a "which one?"
+question cannot hide an unsafe verb.
+"""
 import paths  # noqa: F401
 from apertus import ask
 from baseline import parse
 
 
-# Asked before Decide, on the sentence alone: the verb and a contradiction
-# decide a refusal before any "which one?" question can hide them. The
-# examples are invented (no dev scene, no dev instruction).
+# The examples are invented: no dev scene, no dev instruction.
 PRECHECK_PROMPT = """\
 A robot arm above a table gets this instruction: "{text}"
 
@@ -36,8 +38,8 @@ which box.
 "pick up that one" -> go on: vague, a question comes later.
 Give the reason in one sentence, then the decision."""
 
-# The decision comes last: after an enum Apertus pads with whitespace
-# instead of writing the next field.
+# The decision comes last: after an enum field, Apertus pads with
+# whitespace instead of writing the next field.
 PRECHECK_SCHEMA = {
     "type": "object",
     "required": ["reason", "decision"],
@@ -49,8 +51,18 @@ PRECHECK_SCHEMA = {
 
 
 def precheck(model, text):
-    """Return a refusal reason if the sentence alone must be refused,
-    else None. A failed call goes on: the planner still checks safety."""
+    """Check whether an instruction must be refused on its words alone.
+
+    A failed call lets the instruction go on: the planner still checks
+    safety.
+
+    Args:
+        model: A model function, see ``apertus.server_model()``.
+        text: The instruction.
+
+    Returns:
+        Apertus's reason for refusing, or None to go on.
+    """
     reply = parse(ask(model, PRECHECK_PROMPT.format(text=text), [],
                       PRECHECK_SCHEMA)) or {}
     if reply.get("decision") != "refuse":
@@ -59,7 +71,15 @@ def precheck(model, text):
     return reply.get("reason") or "I cannot do this safely."
 
 
-def refusal(iid, reason):
-    """The answer for a refused instruction."""
-    return {"instruction_id": iid, "target_pixel": None,
+def refusal(instruction_id, reason):
+    """Build the answer for a refused instruction.
+
+    Args:
+        instruction_id: The instruction's id.
+        reason: Why the robot refuses.
+
+    Returns:
+        The answer in the challenge's format.
+    """
+    return {"instruction_id": instruction_id, "target_pixel": None,
             "actions": [{"action": "refuse", "reason": reason}]}
