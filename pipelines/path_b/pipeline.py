@@ -4,17 +4,21 @@ r"""Path B: from a photo and an instruction to a safe robot action.
 Apertus is the only learned model and the main detector; OpenCV only
 measures. See ARCHITECTURE.md and docs/adr/0001.
 
-    APERTUS_API_KEY=... python pipelines/path_b_randy_nocrop/pipeline.py \
+    python pipelines/path_b/run.py --data dataset \
+        --out results/path_b.json \
         --base-url https://hackapertus.livemap.sh/v1 \
-        --model apertus-v1.5-70b --data dataset --out results.json
-    python starter/evaluate.py results.json --data dataset
+        --model apertus-v1.5-70b
+    python starter/evaluate.py results/path_b.json --data dataset
+
+The key for the server is read from API_KEY (or APERTUS_API_KEY), in the
+environment or in the repository's .env file.
 
 Or a local server:
 
     vllm serve swiss-ai/Apertus-v1.5-8B \
         --chat-template-content-format string
-    python pipelines/path_b_randy_nocrop/pipeline.py \
-        --data dataset --out results.json
+    python pipelines/path_b/run.py --data dataset \
+        --out results/path_b.json
 
 Stages, one module each:
     detect.py     Apertus boxes every object on the whole photo; each box
@@ -139,7 +143,36 @@ def run(data: str | Path, model: Model, log: TextIO | None = None,
             if log:
                 log.write(json.dumps(record) + "\n")
 
-    return {"team": "path_b_randy_nocrop", "results": results}
+    return {"team": "path_b", "results": results}
+
+
+def api_key(env_file: Path = paths.ROOT / ".env") -> str:
+    """Find the key for the Apertus server.
+
+    The environment comes first, then the repository's ``.env`` file. The
+    team's name for it is API_KEY (see ``.env.example``); APERTUS_API_KEY
+    is still read.
+
+    Args:
+        env_file: The ``.env`` file to read when the environment has no
+            key.
+
+    Returns:
+        The key, or ``"none"`` when there is none (a local server).
+    """
+    names = ("API_KEY", "APERTUS_API_KEY")
+    for name in names:
+        if os.environ.get(name):
+            return os.environ[name]
+
+    found = {}
+    if env_file.exists():
+        for line in env_file.read_text().splitlines():
+            name, equals, value = line.partition("=")
+            if equals and not name.strip().startswith("#"):
+                found[name.strip()] = value.split("#")[0].strip().strip("\"'")
+
+    return next((found[name] for name in names if found.get(name)), "none")
 
 
 def main() -> None:
@@ -159,7 +192,7 @@ def main() -> None:
     ap.add_argument("--timeout", type=float, default=180)
     ap.add_argument("--parallel", type=int, default=5,
                     help="model calls in flight at once (endpoint limit)")
-    ap.add_argument("--team", default="path_b_randy_nocrop")
+    ap.add_argument("--team", default="path_b")
     ap.add_argument("--thinking", action="store_true",
                     help="the planner thinks first (Apertus's thinking "
                          "mode; slower, and worse on the dev scenes)")
@@ -171,15 +204,15 @@ def main() -> None:
                     help="leave the measured gaps out")
     args = ap.parse_args()
 
-    # From the environment, never the command line: keys on the command
-    # line end up in the shell history.
-    api_key = os.environ.get("APERTUS_API_KEY", "none")
+    # From the environment or .env, never the command line: keys on the
+    # command line end up in the shell history.
+    key = api_key()
     model = ApertusClient(args.base_url, args.model, args.max_side,
-                          args.timeout, api_key, args.parallel)
+                          args.timeout, key, args.parallel)
     thinker = None
     if args.thinking:
         thinker = ApertusClient(args.base_url, args.model, args.max_side,
-                                args.timeout, api_key, args.parallel,
+                                args.timeout, key, args.parallel,
                                 thinking=True)
 
     started = time.time()

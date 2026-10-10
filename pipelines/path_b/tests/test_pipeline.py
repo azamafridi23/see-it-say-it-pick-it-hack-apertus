@@ -3,9 +3,10 @@
 The pipeline is tested through ``pipeline.run()``, the Apertus client
 against a fake HTTP server. No real server is needed:
 
-    .venv/bin/python -m unittest discover pipelines/path_b_randy_nocrop/tests
+    .venv/bin/python -m unittest discover pipelines/path_b/tests
 """
 import json
+import os
 import sys
 import tempfile
 import threading
@@ -14,6 +15,7 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from unittest import mock
 
 PIPELINE = Path(__file__).resolve().parents[1]
 ROOT = PIPELINE.parents[1]
@@ -111,6 +113,33 @@ class FakeServer(BaseHTTPRequestHandler):
 
     def log_message(self, *args):
         """Keep the test output quiet."""
+
+
+class ApiKey(unittest.TestCase):
+    """The key comes from the environment or the repository's .env."""
+
+    def key_from(self, env_text, environ):
+        """Return the key read with ``env_text`` as .env and ``environ``."""
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / ".env"
+            env_file.write_text(env_text)
+            with mock.patch.dict(os.environ, environ, clear=True):
+                return pipeline.api_key(env_file)
+
+    def test_the_team_name_is_read_from_the_env_file(self):
+        text = "HF_TOKEN=abc\nAPI_KEY=sk-team   # for the endpoint\n"
+        self.assertEqual(self.key_from(text, {}), "sk-team")
+
+    def test_the_older_name_still_works(self):
+        self.assertEqual(self.key_from("APERTUS_API_KEY=sk-old\n", {}),
+                         "sk-old")
+
+    def test_the_environment_wins_over_the_env_file(self):
+        self.assertEqual(self.key_from("API_KEY=sk-file\n",
+                                       {"API_KEY": "sk-shell"}), "sk-shell")
+
+    def test_no_key_anywhere_gives_none(self):
+        self.assertEqual(self.key_from("# API_KEY=sk-off\n", {}), "none")
 
 
 class ApertusClient(unittest.TestCase):

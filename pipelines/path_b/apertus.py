@@ -24,7 +24,7 @@ Model = Callable[[str, list[np.ndarray], dict | None, float], str]
 
 # Seconds to wait before each retry of a busy (429), failing (5xx)
 RETRY_WAITS = (1, 2, 4, 8, 16)
-# Reply budgets in tokens. 
+# Reply budgets in tokens.
 MAX_TOKENS = 800
 THINKING_MAX_TOKENS = 4000
 # Apertus's chat template ends its thinking with this token

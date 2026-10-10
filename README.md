@@ -85,13 +85,14 @@ Apertus is the only learned model and the main detector; OpenCV only measures.
    `path_a_azam`'s single-call planner.
 7. **Code** checks the answer against the scene graph and asks Apertus to correct it if needed.
 
-It needs Python 3.11+ with `numpy` and `opencv-python` (the root `requirements.txt`); no GPU, and no
-SAM 3. Every value particular to this camera, table and object set is in
+It needs Python 3.10+ with `numpy` and `opencv-python`; no GPU, and no SAM 3. The key is `API_KEY` in
+`.env`, as for `path_a_azam`. Every value particular to this camera, table and object set is in
 [`workcell.ini`](pipelines/path_b/workcell.ini).
 
 ```
-APERTUS_API_KEY=... .venv/bin/python pipelines/path_b/pipeline.py --data dataset \
-    --out results/path_b.json --base-url https://hackapertus.livemap.sh/v1 --model apertus-v1.5-70b
+.venv/bin/pip install -r pipelines/path_b/requirements.txt
+.venv/bin/python pipelines/path_b/run.py --data dataset --out results/path_b.json \
+    --base-url https://hackapertus.livemap.sh/v1 --model apertus-v1.5-70b
 .venv/bin/python starter/evaluate.py results/path_b.json --data dataset
 .venv/bin/python -m unittest discover pipelines/path_b/tests   # offline, no API key needed
 ```

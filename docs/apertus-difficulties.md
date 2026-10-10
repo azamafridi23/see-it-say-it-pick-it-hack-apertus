@@ -5,7 +5,7 @@ Evidence log for the report. Each entry: what failed, Apertus's own words, what 
 ## Setup
 
 - Model: `apertus-v1.5-70b` on the hosted hackathon endpoint, 7 October 2026.
-- Pipeline: Path B (`pipelines/path_b_randy_nocrop/pipeline.py`), all switches on: marks, Inventory, reasoning + three checks, 5 votes at temperature 0.7, grid zoom, width facts, clean image.
+- Pipeline: an earlier Path B design (in the git history at commit `8ce5000`), all switches on: marks, Inventory, reasoning + three checks, 5 votes at temperature 0.7, grid zoom, width facts, clean image.
 - Scored with `starter/evaluate.py` on the dev set (10 scenes, 50 instructions).
 - Reference: the organisers' baseline on the same model scored 21.7 / 65 (grounding 22/40, 33 plans); ours 20.9 / 65 (grounding 18/40, 23 plans).
 

@@ -1,4 +1,4 @@
-# `path_b_randy_nocrop`: architecture
+# `path_b`: architecture
 
 Path B uses **Apertus as the only learned model, and as the main detector**:
 Apertus finds and names every object. OpenCV only helps by measuring (sizes,
@@ -262,11 +262,18 @@ The full log of Apertus's weaknesses, with evidence, is in
 ## Run
 
 ```
-APERTUS_API_KEY=... python pipelines/path_b_randy_nocrop/pipeline.py --data dataset --out results.json \
+pip install -r pipelines/path_b/requirements.txt
+python pipelines/path_b/run.py --data dataset --out results/path_b.json \
     --base-url https://hackapertus.livemap.sh/v1 --model apertus-v1.5-70b
-python starter/evaluate.py results.json --data dataset
+python starter/evaluate.py results/path_b.json --data dataset
 ```
 
+The key for the Apertus server is read from `API_KEY` (or `APERTUS_API_KEY`),
+in the environment or in the repository's `.env` file (see `.env.example`).
 `--data` takes any folder of scenes, so the held-out run is the same command
 with `--data heldout`. With no `--base-url`, it uses a local vLLM server at
-`http://localhost:8000/v1`.
+`http://localhost:8000/v1`. The tests run offline, without a key:
+
+```
+python -m unittest discover pipelines/path_b/tests
+```
