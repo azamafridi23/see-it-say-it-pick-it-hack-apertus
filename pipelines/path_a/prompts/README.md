@@ -2,7 +2,7 @@
 
 The rules Apertus is given before it reads a scene graph and an instruction. One text file per version.
 
-    python pipelines/path_a_azam/run.py --data dataset --out results/try_v2.json --prompt planner_v2
+    python pipelines/path_a/run.py --data dataset --out results/try_v2.json --prompt planner_v2
 
 Without `--prompt`, the default is used: `planner_v2` (set by `DEFAULT_PROMPT` in `planner.py`).
 The version used is written to the log next to every answer.

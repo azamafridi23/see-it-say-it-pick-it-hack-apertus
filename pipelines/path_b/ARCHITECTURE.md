@@ -7,7 +7,7 @@ See [docs/adr/0001-opencv-allowed-in-path-b.md](../../docs/adr/0001-opencv-allow
 
 "No crop" means Apertus sees the **whole photo once per scene** and boxes
 every object. Earlier versions cropped one close-up per OpenCV blob. The
-planner is `path_a_azam`'s, ported: the same prompt, schema, checker and
+planner is `path_a`'s, ported: the same prompt, schema, checker and
 retries, fed with a scene graph built from Apertus's boxes instead of SAM 3.
 
 The code is in this folder, one module per job:
@@ -118,7 +118,7 @@ wrong, and asking made its boxes worse, so this is measured instead.
 
 ## 4 Scene graph (code)
 
-The objects become the JSON that `path_a_azam`'s planner reads. One object
+The objects become the JSON that `path_a`'s planner reads. One object
 (illustrative values):
 
 ```json
@@ -162,7 +162,7 @@ instructions.
 
 ## 6 Planner (Apertus) and 7 Checker (code)
 
-Ported from `pipelines/path_a_azam/planner.py`. The prompt explains:
+Ported from `pipelines/path_a/planner.py`. The prompt explains:
 - the scene description;
 - what the robot can do: one move at a time, and objects that cover the
   target are moved aside first;
@@ -263,16 +263,17 @@ The full log of Apertus's weaknesses, with evidence, is in
 
 ```
 pip install -r pipelines/path_b/requirements.txt
-python pipelines/path_b/run.py --data dataset --out results/path_b.json \
-    --base-url https://hackapertus.livemap.sh/v1 --model apertus-v1.5-70b
+python pipelines/path_b/run.py --data dataset --out results/path_b.json
 python starter/evaluate.py results/path_b.json --data dataset
 ```
 
-The key for the Apertus server is read from `API_KEY` (or `APERTUS_API_KEY`),
-in the environment or in the repository's `.env` file (see `.env.example`).
+The server, model and key are read from `API_BASE_URL`, `API_MODEL` and
+`APERTUS_API_KEY`, in the environment or in the repository's
+`.env` file (see `.env.example`); `--base-url` and `--model` override the
+first two.
 `--data` takes any folder of scenes, so the held-out run is the same command
-with `--data heldout`. With no `--base-url`, it uses a local vLLM server at
-`http://localhost:8000/v1`. The tests run offline, without a key:
+with `--data heldout`. With no server set
+anywhere, it uses a local vLLM server at `http://localhost:8000/v1`. The tests run offline, without a key:
 
 ```
 python -m unittest discover pipelines/path_b/tests

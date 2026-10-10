@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Try SAM 3 on one scene: one text prompt per object type, all instances back as masks.
 
-    python pipelines/path_a_azam/run_sam3.py dataset/scene_06
-    python pipelines/path_a_azam/run_sam3.py dataset/scene_06 --prompts "red gear" "yellow gear" --threshold 0.4
+    python pipelines/path_a/run_sam3.py dataset/scene_06
+    python pipelines/path_a/run_sam3.py dataset/scene_06 --prompts "red gear" "yellow gear" --threshold 0.4
 
 Needs HF_TOKEN in the .env file at the repository root: facebook/sam3 is a gated model.
 
-Writes pipelines/path_a_azam/out/<scene>_overlay.jpg (masks drawn on the photo, to check by eye) and
+Writes pipelines/path_a/out/<scene>_overlay.jpg (masks drawn on the photo, to check by eye) and
 out/<scene>_detections.json (label, score, box, an interior pixel, mask area).
 Pixels are [u, v] in the full-resolution photo, as in the challenge's target_pixel.
 

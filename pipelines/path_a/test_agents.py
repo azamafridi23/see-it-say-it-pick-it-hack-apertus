@@ -1,6 +1,6 @@
 """Offline regression tests: no model calls, model downloads, or credentials required.
 
-    python -m unittest discover -s pipelines/path_a_azam -p 'test_*.py' -v
+    python -m unittest discover -s pipelines/path_a -p 'test_*.py' -v
 """
 from __future__ import annotations
 

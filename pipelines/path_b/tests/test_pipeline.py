@@ -126,20 +126,31 @@ class ApiKey(unittest.TestCase):
             with mock.patch.dict(os.environ, environ, clear=True):
                 return pipeline.api_key(env_file)
 
-    def test_the_team_name_is_read_from_the_env_file(self):
-        text = "HF_TOKEN=abc\nAPI_KEY=sk-team   # for the endpoint\n"
+    def test_the_key_is_read_from_the_env_file(self):
+        text = "HF_TOKEN=abc\nAPERTUS_API_KEY=sk-team   # the endpoint\n"
         self.assertEqual(self.key_from(text, {}), "sk-team")
 
-    def test_the_older_name_still_works(self):
-        self.assertEqual(self.key_from("APERTUS_API_KEY=sk-old\n", {}),
-                         "sk-old")
-
     def test_the_environment_wins_over_the_env_file(self):
-        self.assertEqual(self.key_from("API_KEY=sk-file\n",
-                                       {"API_KEY": "sk-shell"}), "sk-shell")
+        self.assertEqual(self.key_from("APERTUS_API_KEY=sk-file\n",
+                                       {"APERTUS_API_KEY": "sk-shell"}),
+                         "sk-shell")
 
     def test_no_key_anywhere_gives_none(self):
-        self.assertEqual(self.key_from("# API_KEY=sk-off\n", {}), "none")
+        self.assertEqual(self.key_from("# APERTUS_API_KEY=sk-off\n", {}),
+                         "none")
+
+    def test_the_server_and_model_come_from_the_env_file(self):
+        text = ("API_BASE_URL=https://example.org/v1\n"
+                "API_MODEL=apertus-v1.5-70b  # the 70B\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / ".env"
+            env_file.write_text(text)
+            with mock.patch.dict(os.environ, {}, clear=True):
+                url = pipeline.env_value("API_BASE_URL", env_file)
+                model = pipeline.env_value("API_MODEL", env_file)
+
+        self.assertEqual((url, model),
+                         ("https://example.org/v1", "apertus-v1.5-70b"))
 
 
 class ApertusClient(unittest.TestCase):

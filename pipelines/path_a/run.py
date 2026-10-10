@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """The whole pipeline on a folder of scenes: photo -> scene graph -> Apertus -> results file.
 
-    python pipelines/path_a_azam/run.py --data dataset --out results/path_a_azam.json
-    python starter/evaluate.py results/path_a_azam.json --data dataset
+    python pipelines/path_a/run.py --data dataset --out results/path_a.json
+    python starter/evaluate.py results/path_a.json --data dataset
 
     --prompt planner_v2    try another version of the rules given to Apertus (files in prompts/)
     --planner graph        three Apertus agents (safety, reference, constraints) instead of one call
@@ -10,7 +10,7 @@
 Per photo:        SAM 3 finds the objects, Apertus names what it sees, code builds the scene graph (scene_graph.py).
 Per instruction:  Apertus reads the scene graph and the instruction and answers; code checks the answer (planner.py).
 
-Needs HF_TOKEN (SAM 3) and API_KEY (Apertus) in a .env file. Any OpenAI-compatible server works: --base-url, --model.
+Needs HF_TOKEN (SAM 3) and APERTUS_API_KEY (Apertus) in a .env file. Any OpenAI-compatible server works: --base-url, --model.
 Writes the results file and <out>.log.jsonl: every reply from Apertus and every correction, for the failure report.
 The category in instructions.txt is not used.
 """

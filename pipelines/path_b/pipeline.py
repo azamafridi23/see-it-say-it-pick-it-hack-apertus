@@ -5,13 +5,12 @@ Apertus is the only learned model and the main detector; OpenCV only
 measures. See ARCHITECTURE.md and docs/adr/0001.
 
     python pipelines/path_b/run.py --data dataset \
-        --out results/path_b.json \
-        --base-url https://hackapertus.livemap.sh/v1 \
-        --model apertus-v1.5-70b
+        --out results/path_b.json
     python starter/evaluate.py results/path_b.json --data dataset
 
-The key for the server is read from API_KEY (or APERTUS_API_KEY), in the
-environment or in the repository's .env file.
+The server, model and key are read from API_BASE_URL, API_MODEL and
+APERTUS_API_KEY, in the environment or in the repository's .env file;
+--base-url and --model override the first two.
 
 Or a local server:
 
@@ -146,12 +145,33 @@ def run(data: str | Path, model: Model, log: TextIO | None = None,
     return {"team": "path_b", "results": results}
 
 
+def env_value(name: str, env_file: Path = paths.ROOT / ".env") -> str | None:
+    """Read a setting from the environment, else the repository's .env.
+
+    Args:
+        name: The setting's name.
+        env_file: The ``.env`` file to read when the environment does not
+            set it.
+
+    Returns:
+        The value, or None when it is not set or empty.
+    """
+    if os.environ.get(name):
+        return os.environ[name]
+
+    if env_file.exists():
+        for line in env_file.read_text().splitlines():
+            key, equals, value = line.partition("=")
+            if equals and key.strip() == name:
+                return value.split("#")[0].strip().strip("\"'") or None
+
+    return None
+
+
 def api_key(env_file: Path = paths.ROOT / ".env") -> str:
     """Find the key for the Apertus server.
 
-    The environment comes first, then the repository's ``.env`` file. The
-    team's name for it is API_KEY (see ``.env.example``); APERTUS_API_KEY
-    is still read.
+    It is APERTUS_API_KEY (see ``.env.example``).
 
     Args:
         env_file: The ``.env`` file to read when the environment has no
@@ -160,19 +180,7 @@ def api_key(env_file: Path = paths.ROOT / ".env") -> str:
     Returns:
         The key, or ``"none"`` when there is none (a local server).
     """
-    names = ("API_KEY", "APERTUS_API_KEY")
-    for name in names:
-        if os.environ.get(name):
-            return os.environ[name]
-
-    found = {}
-    if env_file.exists():
-        for line in env_file.read_text().splitlines():
-            name, equals, value = line.partition("=")
-            if equals and not name.strip().startswith("#"):
-                found[name.strip()] = value.split("#")[0].strip().strip("\"'")
-
-    return next((found[name] for name in names if found.get(name)), "none")
+    return env_value("APERTUS_API_KEY", env_file) or "none"
 
 
 def main() -> None:
@@ -185,8 +193,12 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=Path("results.json"))
     ap.add_argument("--workcell", type=Path, default=workcell.DEFAULT_PATH,
                     help="the workcell's settings (INI)")
-    ap.add_argument("--base-url", default="http://localhost:8000/v1")
-    ap.add_argument("--model", default="swiss-ai/Apertus-v1.5-8B")
+    # The server and model come from API_BASE_URL and API_MODEL in .env,
+    # unless given here; without either, a local vLLM server.
+    ap.add_argument("--base-url", default=env_value("API_BASE_URL")
+                    or "http://localhost:8000/v1")
+    ap.add_argument("--model", default=env_value("API_MODEL")
+                    or "swiss-ai/Apertus-v1.5-8B")
     ap.add_argument("--max-side", type=int, default=1024,
                     help="resize the photo so its long side is at most this")
     ap.add_argument("--timeout", type=float, default=180)

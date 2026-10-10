@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Development check, not part of the pipeline: compare the scene graphs with the ground-truth masks.
 
-    python pipelines/path_a_azam/dev/check_graph.py dataset
+    python pipelines/path_a/dev/check_graph.py dataset
 
 For every object that has a ground-truth mask: is there a graph object whose pixel lies on it, and
 does it carry the same name? The masks cover only the objects that are a target of some instruction.

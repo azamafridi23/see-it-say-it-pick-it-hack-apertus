@@ -76,7 +76,7 @@ class GraphPlanner:
             raise ValueError("Prompt overrides must name safety, reference, or constraint.")
         self.prompts = {role: load_prompt(name) for role, name in names.items()}
         self.prompt_name = "+".join(name for name, _ in self.prompts.values())
-        self.client = OpenAI(api_key=api_key or os.environ.get("API_KEY") or "none", base_url=base_url, timeout=120)
+        self.client = OpenAI(api_key=api_key or os.environ.get("APERTUS_API_KEY") or "none", base_url=base_url, timeout=120)
         self.app = self.build()
 
     def ask(self, messages: list[dict], schema: dict) -> tuple[str, dict | None]:

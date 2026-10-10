@@ -122,7 +122,7 @@ class Planner:
                  prompt: str = DEFAULT_PROMPT):
         self.model = model
         self.prompt_name, self.system = load_prompt(prompt)
-        self.client = OpenAI(api_key=api_key or os.environ.get("API_KEY") or "none", base_url=base_url, timeout=120)
+        self.client = OpenAI(api_key=api_key or os.environ.get("APERTUS_API_KEY") or "none", base_url=base_url, timeout=120)
 
     def ask(self, messages: list[dict], graph: dict) -> tuple[str, dict | None]:
         r = with_patience(self.client.chat.completions.create,

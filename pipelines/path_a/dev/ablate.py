@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Development test, not part of the pipeline: how well are objects found when the fixed list does not know them?
 
-    python pipelines/path_a_azam/dev/ablate.py dataset
+    python pipelines/path_a/dev/ablate.py dataset
 
 Hides some prompts from the fixed list, rebuilds every scene graph, and counts how many of the hidden objects
 are still found (same place as in the full graph), and how many objects appear that the full graph does not have.

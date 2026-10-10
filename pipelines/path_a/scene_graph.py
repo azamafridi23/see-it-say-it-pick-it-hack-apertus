@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Turn SAM 3 detections into a scene graph: the JSON description of the photo that Apertus reasons over.
 
-    python pipelines/path_a_azam/scene_graph.py dataset/scene_06     one scene
-    python pipelines/path_a_azam/scene_graph.py dataset              every scene in the folder
+    python pipelines/path_a/scene_graph.py dataset/scene_06     one scene
+    python pipelines/path_a/scene_graph.py dataset              every scene in the folder
 
-Writes pipelines/path_a_azam/out/<scene>_graph.json and out/<scene>_graph.jpg (the graph drawn on the photo).
+Writes pipelines/path_a/out/<scene>_graph.json and out/<scene>_graph.jpg (the graph drawn on the photo).
 
 Steps: detect (run_sam3.detect, cached) -> drop what is off the table -> merge duplicates and
 fragments -> add what nobody named -> name the objects -> measure them -> work out what lies on what.

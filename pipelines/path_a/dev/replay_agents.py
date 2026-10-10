@@ -1,6 +1,6 @@
 """Evaluate agent prompts on saved scene graphs, without rerunning vision or loading its models.
 
-python pipelines/path_a_azam/dev/replay_agents.py --graphs pipelines/path_a_azam/out \
+python pipelines/path_a/dev/replay_agents.py --graphs pipelines/path_a/out \
     --data dataset --out results/agents_v3.json
 
 The saved graphs are the only perception input. Instructions are read without their category labels.

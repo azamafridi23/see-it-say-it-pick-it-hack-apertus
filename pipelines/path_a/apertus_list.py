@@ -2,11 +2,11 @@
 """Apertus lists the objects it sees in a scene photo, in its own words. The names become extra SAM 3 prompts,
 so that objects outside the detector's fixed list can still be found.
 
-    python pipelines/path_a_azam/apertus_list.py dataset                          every scene, 70B model
-    python pipelines/path_a_azam/apertus_list.py dataset/scene_08 --model apertus-v1.5-8b
+    python pipelines/path_a/apertus_list.py dataset                          every scene, 70B model
+    python pipelines/path_a/apertus_list.py dataset/scene_08 --model apertus-v1.5-8b
 
-Needs API_KEY in the .env file at the repository root. Any OpenAI-compatible server works (--base-url).
-Writes pipelines/path_a_azam/out/apertus_objects_<model>.json: per scene, the raw reply and the parsed list.
+Needs APERTUS_API_KEY in the .env file at the repository root. Any OpenAI-compatible server works (--base-url).
+Writes pipelines/path_a/out/apertus_objects_<model>.json: per scene, the raw reply and the parsed list.
 """
 from __future__ import annotations
 
@@ -88,11 +88,11 @@ def names_for(scene: Path, model: str = MODEL, base_url: str = BASE_URL) -> list
     if path.exists():
         objs = json.loads(path.read_text())["objects"]
     else:
-        if not os.environ.get("API_KEY"):
-            print("  no API_KEY: skipping Apertus's object names")
+        if not os.environ.get("APERTUS_API_KEY"):
+            print("  no APERTUS_API_KEY: skipping Apertus's object names")
             return []
         try:
-            reply, objs = list_objects(OpenAI(api_key=os.environ["API_KEY"], base_url=base_url, timeout=120), model, Path(scene) / "rgb.png")
+            reply, objs = list_objects(OpenAI(api_key=os.environ["APERTUS_API_KEY"], base_url=base_url, timeout=120), model, Path(scene) / "rgb.png")
         except Exception as e:
             print(f"  Apertus unreachable ({type(e).__name__}): skipping its object names")
             return []
@@ -112,9 +112,9 @@ def main():
     ap.add_argument("--hide", nargs="*", default=[], help="with --with-list: names to leave out of the list")
     ap.add_argument("--out", type=Path, default=Path(__file__).resolve().parent / "out")
     args = ap.parse_args()
-    if not os.environ.get("API_KEY"):
-        raise SystemExit("API_KEY is not set: put API_KEY=... in the .env file at the repository root")
-    client = OpenAI(api_key=os.environ["API_KEY"], base_url=args.base_url, timeout=120)
+    if not os.environ.get("APERTUS_API_KEY"):
+        raise SystemExit("APERTUS_API_KEY is not set: put APERTUS_API_KEY=... in the .env file at the repository root")
+    client = OpenAI(api_key=os.environ["APERTUS_API_KEY"], base_url=args.base_url, timeout=120)
 
     scenes = [args.data] if (args.data / "rgb.png").exists() else sorted(p for p in args.data.iterdir() if (p / "rgb.png").exists())
     results = {}

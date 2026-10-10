@@ -284,21 +284,21 @@ What the comparison shows:
 Run the whole pipeline with the multi-agent planner, from the repository root:
 
 ```
-python pipelines/path_a_azam/run.py --data dataset --out results/path_a_azam_graph.json --planner graph
-python starter/evaluate.py results/path_a_azam_graph.json --data dataset
+python pipelines/path_a/run.py --data dataset --out results/path_a_graph.json --planner graph
+python starter/evaluate.py results/path_a_graph.json --data dataset
 ```
 
 Run the tests:
 
 ```
-python -m unittest discover -s pipelines/path_a_azam -p 'test_*.py'
+python -m unittest discover -s pipelines/path_a -p 'test_*.py'
 ```
 
 Compare prompts quickly. The replay tool reads the scene graphs already saved in `out/`, so it
 tests the agents only and needs neither SAM 3 nor the photos:
 
 ```
-python pipelines/path_a_azam/dev/replay_agents.py --graphs pipelines/path_a_azam/out --data dataset \
+python pipelines/path_a/dev/replay_agents.py --graphs pipelines/path_a/out --data dataset \
     --out results/try_reference_v3.json --reference-prompt agent_reference_v3
 python starter/evaluate.py results/try_reference_v3.json --data dataset
 ```

@@ -6,7 +6,7 @@ coordinates: its reply is constrained to a JSON schema whose ids are this
 scene's, then checked against the graph, and sent back with the error
 when it breaks a rule.
 
-Ported from Path A (``pipelines/path_a_azam/planner.py`` on main). Path B
+Ported from Path A (``pipelines/path_a/planner.py`` on main). Path B
 builds the graph from Apertus's boxes instead of SAM 3 and depth, so it
 has ``touching`` where Path A has the depth-based ``maybe_on``.
 """

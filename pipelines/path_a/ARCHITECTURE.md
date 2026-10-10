@@ -76,11 +76,11 @@ The pipeline itself (`run.py` and what it imports) never reads the ground truth,
 category written in `instructions.txt`.
 
 ```
-python pipelines/path_a_azam/run.py --data dataset --out results/path_a_azam.json
-python starter/evaluate.py results/path_a_azam.json --data dataset
+python pipelines/path_a/run.py --data dataset --out results/path_a.json
+python starter/evaluate.py results/path_a.json --data dataset
 ```
 
-Run both from the repository root. It needs `HF_TOKEN` (SAM 3 is a gated model) and `API_KEY` (Apertus) in a
+Run both from the repository root. It needs `HF_TOKEN` (SAM 3 is a gated model) and `APERTUS_API_KEY` (Apertus) in a
 `.env` file at the repository root; see `.env.example`.
 
 ---
