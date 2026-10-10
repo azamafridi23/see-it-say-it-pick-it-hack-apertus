@@ -3,5 +3,9 @@ results*.json
 __pycache__/
 .DS_Store
 .env
+*.key
 .venv/
 pipelines/*/out/
+docs/adr
+docs/figures
+docs/report
