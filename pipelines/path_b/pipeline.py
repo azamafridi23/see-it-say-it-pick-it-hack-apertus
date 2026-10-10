@@ -29,46 +29,55 @@ import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import TextIO
 
 import paths  # noqa: F401
 import detect
 import measure
 import planner
-from apertus import ask, server_model
+import workcell
+from apertus import ApertusClient, Model, ask
 from safety import precheck, refusal
-from scene_io import load_scene
+from scene_io import Scene, load_scene
+from workcell import DetectedObject, Workcell
 
 
-def measured_objects(model, scene, widths, gaps):
+def measured_objects(model: Model, scene: Scene, cell: Workcell,
+                     widths: bool, gaps: bool) -> list[DetectedObject]:
     """Find the scene's objects with Apertus and measure them with OpenCV.
 
     Args:
-        model: A model function, see ``apertus.server_model()``.
+        model: A model, such as an ``apertus.ApertusClient``.
         scene: The scene, as loaded by ``scene_io.load_scene()``.
+        cell: The workcell's settings.
         widths: Whether to measure each object's width.
         gaps: Whether to measure the gaps between objects.
 
     Returns:
-        The objects, see ``detect.find_objects()``, with ``colour``,
-        ``on`` and, when measured, ``width_mm`` and ``gaps``.
+        The detected objects, with each part's kind decided by its size,
+        their colour and what they lie on, and, when measured, their width
+        and gaps.
     """
-    objects = detect.find_objects(model, scene)
+    objects = detect.find_objects(model, scene, cell)
+    measure.name_parts_by_size(scene, objects, cell)
     for obj in objects:
-        obj["colour"] = measure.colour_name(scene.rgb, obj)
+        obj.colour = measure.colour_name(scene.rgb, obj, cell)
 
     if widths:
         for obj in objects:
-            obj["width_mm"] = round(measure.width_mm(scene, obj))
+            obj.width_mm = round(measure.width_mm(scene, obj))
 
     if gaps:
         measure.add_gaps(scene, objects)
 
-    measure.add_stacking(scene.rgb, objects)
+    measure.add_stacking(scene.rgb, objects, cell)
     return objects
 
 
-def run(data, model, log=None, widths=True, gaps=True, safety=True,
-        thinker=None):
+def run(data: str | Path, model: Model, log: TextIO | None = None,
+        cell: Workcell | None = None, widths: bool = True,
+        gaps: bool = True, safety: bool = True,
+        thinker: Model | None = None) -> dict:
     """Answer every instruction of every scene in a folder.
 
     A scene's instructions are answered in parallel.
@@ -76,35 +85,37 @@ def run(data, model, log=None, widths=True, gaps=True, safety=True,
     Args:
         data: The folder of scenes, each with ``rgb.png`` and
             ``instructions.txt``.
-        model: A model function, see ``apertus.server_model()``.
+        model: A model, such as an ``apertus.ApertusClient``.
         log: A text file that gets one JSON line per instruction, or None.
+        cell: The workcell's settings; ``workcell.ini`` when None.
         widths: Whether to measure the objects' widths.
         gaps: Whether to measure the gaps between objects.
         safety: Whether to run the safety pre-check before planning.
-        thinker: A model function with Apertus's thinking on, to let the
-            planner think before it answers; None to skip thinking.
+        thinker: A model with Apertus's thinking on, to let the planner
+            think before it answers; None to skip thinking.
 
     Returns:
         The submission: ``{"team": ..., "results": [...]}``.
     """
+    cell = cell or workcell.load()
     results = []
     folders = sorted(folder for folder in Path(data).iterdir()
                      if (folder / "rgb.png").exists())
 
     # The planner only needs text in, text out; these bind it to the model.
-    def ask_json(prompt, schema):
+    def ask_json(prompt: str, schema: dict) -> str:
         return ask(model, prompt, [], schema)
 
-    def ask_thinking(prompt):
+    def ask_thinking(prompt: str) -> str:
         return ask(thinker, prompt, [], None)
 
     for folder in folders:
         scene = load_scene(folder)
-        objects = measured_objects(model, scene, widths, gaps)
-        graph = planner.scene_graph(objects,
-                                    measure.black_mat_left(scene.rgb))
+        objects = measured_objects(model, scene, cell, widths, gaps)
+        mat_left = measure.black_mat_left(scene.rgb, cell)
+        graph = planner.scene_graph(objects, mat_left, cell)
 
-        def answer_instruction(instruction):
+        def answer_instruction(instruction: tuple) -> tuple[dict, dict]:
             # The category is never used: the held-out set has no labels.
             instruction_id, _category, text = instruction
             reason = safety and precheck(model, text)
@@ -131,7 +142,7 @@ def run(data, model, log=None, widths=True, gaps=True, safety=True,
     return {"team": "path_b_randy_nocrop", "results": results}
 
 
-def main():
+def main() -> None:
     """Run the pipeline from the command line and write the results."""
     ap = argparse.ArgumentParser(
         description=__doc__,
@@ -139,6 +150,8 @@ def main():
     ap.add_argument("--data", type=Path, default=Path("dataset"),
                     help="folder of scenes")
     ap.add_argument("--out", type=Path, default=Path("results.json"))
+    ap.add_argument("--workcell", type=Path, default=workcell.DEFAULT_PATH,
+                    help="the workcell's settings (INI)")
     ap.add_argument("--base-url", default="http://localhost:8000/v1")
     ap.add_argument("--model", default="swiss-ai/Apertus-v1.5-8B")
     ap.add_argument("--max-side", type=int, default=1024,
@@ -161,20 +174,20 @@ def main():
     # From the environment, never the command line: keys on the command
     # line end up in the shell history.
     api_key = os.environ.get("APERTUS_API_KEY", "none")
-    model = server_model(args.base_url, args.model, args.max_side,
-                         args.timeout, api_key, args.parallel)
+    model = ApertusClient(args.base_url, args.model, args.max_side,
+                          args.timeout, api_key, args.parallel)
     thinker = None
     if args.thinking:
-        thinker = server_model(args.base_url, args.model, args.max_side,
-                               args.timeout, api_key, args.parallel,
-                               thinking=True)
+        thinker = ApertusClient(args.base_url, args.model, args.max_side,
+                                args.timeout, api_key, args.parallel,
+                                thinking=True)
 
     started = time.time()
     log_path = args.out.with_suffix(".raw.jsonl")
     with log_path.open("w") as log:
-        sub = run(args.data, model, log, widths=not args.no_widths,
-                  gaps=not args.no_gaps, safety=not args.no_safety,
-                  thinker=thinker)
+        sub = run(args.data, model, log, cell=workcell.load(args.workcell),
+                  widths=not args.no_widths, gaps=not args.no_gaps,
+                  safety=not args.no_safety, thinker=thinker)
     sub["team"] = args.team
     args.out.write_text(json.dumps(sub, indent=2))
     print(f"{len(sub['results'])} answers in {args.out} "

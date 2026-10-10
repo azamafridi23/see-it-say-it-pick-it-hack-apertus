@@ -4,3 +4,6 @@ __pycache__/
 .DS_Store
 .env
 *.key
+docs/adr
+docs/figures
+docs/report

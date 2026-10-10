@@ -11,18 +11,18 @@ builds the graph from Apertus's boxes instead of SAM 3 and depth, so it
 has ``touching`` where Path A has the depth-based ``maybe_on``.
 """
 import json
+from typing import Callable
+
+from workcell import DetectedObject, Workcell
 
 
 # How often an answer that breaks a rule goes back to Apertus.
 MAX_RETRIES = 2
 
 # With thinking, Apertus first thinks the task through in free text
-# (THINK_NOTE); its conclusion then goes into the JSON call
-# (REASONED_NOTE).
-THINK_NOTE = """
-
-Think it through first. Then write your decision and, for a plan, the \
-moves in order, in plain words with the ids."""
+# (THINK_NOTE); its conclusion then goes into the JSON call (REASONED_NOTE).
+THINK_NOTE = """ Think it through first. Then write your decision and, \
+for a plan, the moves in order, in plain words with the ids."""
 
 REASONED_NOTE = """
 
@@ -30,14 +30,6 @@ YOUR REASONING
 {notes}
 
 Give the answer as JSON, following your reasoning."""
-
-# An object at most this many centimetres from a hand is touching it.
-HAND_GAP_CM = 0.3
-
-# Kinds that are never picked up: the plate and the saucer are the only
-# objects too wide for the gripper (organisers' answer), and a hand is a
-# person. Trays are added to the graph as places, not as objects.
-UNPICKABLE = {"plate", "saucer", "hand"}
 
 # The planner's instructions, as in Path A, with ``touching`` in place of
 # its depth-based ``maybe_on``. The examples use invented objects.
@@ -150,24 +142,26 @@ TRAYS = [
 ]
 
 
-def scene_graph(objects, black_mat_left):
+def scene_graph(objects: list[DetectedObject], black_mat_left: int,
+                cell: Workcell) -> dict:
     """Build the scene graph the planner reads, from the measured objects.
 
     Each object gets an id from its kind, numbered left to right when
     there are several (``red_gear_1``, ``red_gear_2``). An object right of
     ``black_mat_left`` is on the black tray, any other in the grey tray.
+    The two trays are added as places to put things.
 
     Args:
-        objects: The objects, see ``detect.find_objects()``, with
-            ``colour`` and, when measured, ``width_mm``, ``gaps`` and
-            ``on``.
+        objects: The detected objects, with their measured facts.
         black_mat_left: The black mat's left edge, in pixels.
+        cell: The workcell's settings: which kinds are never picked up,
+            and how near a hand counts as touching it.
 
     Returns:
         ``{"hand_present", "left_to_right", "top_to_bottom", "objects"}``,
         the objects including the two trays.
     """
-    kinds = [obj["kind"] for obj in objects]
+    kinds = [obj.kind for obj in objects]
     graph_ids = []
     for kind in kinds:
         base = kind.replace(" ", "_")
@@ -177,27 +171,27 @@ def scene_graph(objects, black_mat_left):
         else:
             graph_ids.append(base)
 
-    id_of = {obj["id"]: graph_id for obj, graph_id in zip(objects, graph_ids)}
-    hands = {obj["id"] for obj in objects if obj["kind"] == "hand"}
+    id_of = {obj.id: graph_id for obj, graph_id in zip(objects, graph_ids)}
+    hands = {obj.id for obj in objects if obj.kind == "hand"}
 
     nodes = []
     for obj, graph_id in zip(objects, graph_ids):
-        gaps = obj.get("gaps", {})
-        node = {"id": graph_id, "type": obj["kind"],
-                "colour": obj.get("colour"), "pixel": obj["pixel"],
-                "size_mm": obj.get("width_mm"),
-                "pickable": obj["kind"] not in UNPICKABLE,
-                "in": ("black_tray" if obj["pixel"][0] >= black_mat_left
+        gaps = obj.gaps
+        node = {"id": graph_id, "type": obj.kind,
+                "colour": obj.colour, "pixel": obj.pixel,
+                "size_mm": obj.width_mm,
+                "pickable": obj.kind not in cell.unpickable,
+                "in": ("black_tray" if obj.pixel[0] >= black_mat_left
                        else "grey_tray"),
-                "on": [id_of[i] for i in obj.get("on", [])],
-                "covered_by": [id_of[other["id"]] for other in objects
-                               if obj["id"] in other.get("on", [])]}
+                "on": [id_of[i] for i in obj.on],
+                "covered_by": [id_of[other.id] for other in objects
+                               if obj.id in other.on]}
 
         node["touching"] = [id_of[i] for i, cm in gaps.items()
                             if cm == 0 and id_of[i] not in node["on"]
                             and id_of[i] not in node["covered_by"]]
-        node["touching_hand"] = any(gaps.get(hand, 99) <= HAND_GAP_CM
-                                    for hand in hands if hand != obj["id"])
+        node["touching_hand"] = any(gaps.get(hand, 99) <= cell.hand_gap_cm
+                                    for hand in hands if hand != obj.id)
         node["nearest_gap_mm"] = [
             [id_of[i], round(10 * cm)]
             for cm, i in sorted((cm, i) for i, cm in gaps.items())]
@@ -210,7 +204,7 @@ def scene_graph(objects, black_mat_left):
             "objects": nodes + TRAYS}
 
 
-def prompt_view(graph):
+def prompt_view(graph: dict) -> dict:
     """Shorten the scene graph for the prompt.
 
     Pixels become ``position``, empty facts are left out, and each object
@@ -249,7 +243,7 @@ def prompt_view(graph):
             "top_to_bottom": graph["top_to_bottom"], "objects": entries}
 
 
-def reply_schema(graph):
+def reply_schema(graph: dict) -> dict:
     """Build the JSON schema of the planner's reply.
 
     Ids are limited to this scene's, so Apertus cannot name an object that
@@ -278,7 +272,7 @@ def reply_schema(graph):
     }
 
 
-def rule_error(reply, graph):
+def rule_error(reply: dict, graph: dict) -> str | None:
     """Check a reply against the graph and the robot's rules.
 
     Args:
@@ -347,7 +341,7 @@ def rule_error(reply, graph):
     return None
 
 
-def to_result(instruction_id, reply, graph):
+def to_result(instruction_id: str, reply: dict, graph: dict) -> dict:
     """Turn a checked reply into the challenge's answer format.
 
     Each move becomes a pick and, unless the object is held, a place. The
@@ -385,7 +379,10 @@ def to_result(instruction_id, reply, graph):
             "actions": actions}
 
 
-def plan(ask_json, instruction_id, text, graph, ask_thinking=None):
+def plan(ask_json: Callable[[str, dict], str], instruction_id: str,
+         text: str, graph: dict,
+         ask_thinking: Callable[[str], str] | None = None
+         ) -> tuple[dict, dict]:
     """Plan one instruction, with retries when the checker rejects a reply.
 
     A reply that breaks a rule goes back to Apertus with the error, up to

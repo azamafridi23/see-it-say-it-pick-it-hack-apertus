@@ -3,7 +3,7 @@
 The pipeline is tested through ``pipeline.run()``, the Apertus client
 against a fake HTTP server. No real server is needed:
 
-    .venv/bin/python -m unittest pipelines/path_b_randy_nocrop/test_pipeline.py
+    .venv/bin/python -m unittest discover pipelines/path_b_randy_nocrop/tests
 """
 import json
 import sys
@@ -15,9 +15,10 @@ from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+PIPELINE = Path(__file__).resolve().parents[1]
+ROOT = PIPELINE.parents[1]
 sys.path.insert(0, str(ROOT / "starter"))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(PIPELINE))
 from evaluate import answer_type  # noqa: E402
 import apertus  # noqa: E402
 import detect  # noqa: E402
@@ -134,13 +135,13 @@ class ApertusClient(unittest.TestCase):
 
     def test_too_many_requests_is_retried(self):
         server, url = self.serve(busy=2)
-        call = apertus.server_model(url, "m", 64, 5)
+        call = apertus.ApertusClient(url, "m", 64, 5)
         self.assertEqual(call("hi", [], {"type": "object"}), "ok")
         self.assertEqual(server.seen, 3)
 
     def test_no_more_calls_in_flight_than_allowed(self):
         server, url = self.serve()
-        call = apertus.server_model(url, "m", 64, 5, parallel=3)
+        call = apertus.ApertusClient(url, "m", 64, 5, parallel=3)
         with ThreadPoolExecutor(12) as pool:
             for _ in range(12):
                 pool.submit(call, "hi", [], {"type": "object"})
@@ -152,7 +153,7 @@ class ApertusClient(unittest.TestCase):
         # A JSON schema would make Apertus skip its thinking.
         server, url = self.serve(reply="<|inner_prefix|>hmm, the cube"
                                        "<|inner_suffix|>Move the cube.")
-        think = apertus.server_model(url, "m", 64, 5, thinking=True)
+        think = apertus.ApertusClient(url, "m", 64, 5, thinking=True)
         self.assertEqual(think("hi", [], None), "Move the cube.")
         sent = server.bodies[0]
         self.assertEqual(sent["chat_template_kwargs"],
@@ -162,7 +163,7 @@ class ApertusClient(unittest.TestCase):
 
     def test_cut_off_thinking_is_a_failed_call(self):
         _, url = self.serve(reply="<|inner_prefix|>hmm, the cube is")
-        think = apertus.server_model(url, "m", 64, 5, thinking=True)
+        think = apertus.ApertusClient(url, "m", 64, 5, thinking=True)
         self.assertEqual(apertus.ask(think, "hi", [], None), "")
 
 
@@ -250,6 +251,31 @@ class Detection(unittest.TestCase):
     def test_a_kind_off_the_list_is_no_object(self):
         black = {"kind": "black part", "bounding_box": [70, 370, 225, 555]}
         self.assertEqual(self.ids_for([black]), {"grey_tray", "black_tray"})
+
+    def test_a_long_narrow_part_is_a_grey_part(self):
+        # 139 x 45 mm on the table, whatever Apertus called it.
+        bar = {"kind": "small white part",
+               "bounding_box": [560, 560, 790, 650]}
+        self.assertIn("grey_part", self.ids_for([bar]))
+
+    def test_a_broad_part_is_a_white_part(self):
+        # 150 x 100 mm.
+        sheet = {"kind": "grey part", "bounding_box": [560, 560, 810, 760]}
+        self.assertIn("white_part", self.ids_for([sheet]))
+
+    def test_a_small_part_is_a_small_white_part(self):
+        # 78 x 50 mm.
+        block = {"kind": "white part", "bounding_box": [560, 560, 690, 660]}
+        self.assertIn("small_white_part", self.ids_for([block]))
+
+    def test_a_box_touching_the_photo_edge_is_no_object(self):
+        # A rail or a tray rim, never an object on the table.
+        rail = {"kind": "small white part", "bounding_box": [0, 40, 530, 70]}
+        self.assertEqual(self.ids_for([rail]), {"grey_tray", "black_tray"})
+
+    def test_a_hand_may_touch_the_photo_edge(self):
+        hand = {"kind": "hand", "bounding_box": [600, 0, 800, 200]}
+        self.assertIn("hand", self.ids_for([hand]))
 
 
 class SafetyCheck(unittest.TestCase):

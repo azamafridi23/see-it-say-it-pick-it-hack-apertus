@@ -5,7 +5,7 @@ refuses unsafe or self-contradicting instructions, so that a "which one?"
 question cannot hide an unsafe verb.
 """
 import paths  # noqa: F401
-from apertus import ask
+from apertus import Model, ask
 from baseline import parse
 
 
@@ -50,14 +50,14 @@ PRECHECK_SCHEMA = {
 }
 
 
-def precheck(model, text):
+def precheck(model: Model, text: str) -> str | None:
     """Check whether an instruction must be refused on its words alone.
 
     A failed call lets the instruction go on: the planner still checks
     safety.
 
     Args:
-        model: A model function, see ``apertus.server_model()``.
+        model: A model, such as an ``apertus.ApertusClient``.
         text: The instruction.
 
     Returns:
@@ -71,7 +71,7 @@ def precheck(model, text):
     return reply.get("reason") or "I cannot do this safely."
 
 
-def refusal(instruction_id, reason):
+def refusal(instruction_id: str, reason: str) -> dict:
     """Build the answer for a refused instruction.
 
     Args:

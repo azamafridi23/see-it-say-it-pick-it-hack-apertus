@@ -19,9 +19,11 @@ The code is in this folder, one module per job:
 | `measure.py` | step 3: OpenCV measuring (sizes, gaps, tray, what lies on top) |
 | `planner.py` | steps 4, 6, 7: scene graph, Path A's planner, checker |
 | `safety.py` | step 5: the pre-check |
-| `apertus.py` | the Apertus client: retries, calls in flight, safe `ask()` |
+| `apertus.py` | `ApertusClient`: retries, calls in flight; and a safe `ask()` |
+| `workcell.ini` | **every value particular to this setup**: object kinds, the box correction, colour hues, stacking, tray and part-size thresholds, each with where it comes from |
+| `workcell.py` | loads `workcell.ini` into a `Workcell` dataclass; defines `DetectedObject`, the record of one found object |
 | `paths.py` | puts the organisers' `starter` and `baseline` on the path |
-| `test_pipeline.py` | the tests, at the `run()` seam and the client |
+| `tests/test_pipeline.py` | the tests, at the `run()` seam and the client; offline, no API key needed |
 
 The older designs in the results table (OpenCV colour blobs, close-up
 naming, the voting Decide stage) were removed from the code once this
@@ -197,6 +199,7 @@ first picked object's corrected box centre.
 
 | Switch | Effect |
 |---|---|
+| `--workcell PATH` | another workcell's settings (default: `workcell.ini`); a new table or camera needs a new file, not code changes |
 | `--no-safety` | no pre-check before planning |
 | `--no-widths` | leave the measured sizes out of the scene graph |
 | `--no-gaps` | leave the measured gaps out (no `nearest_gap_mm`, no `touching`) |
