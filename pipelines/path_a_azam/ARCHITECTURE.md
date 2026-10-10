@@ -1,5 +1,10 @@
 # Architecture
 
+The graph planner now defaults to **v3 prompts and validated agent replies**. See
+[MULTI_AGENT.md](MULTI_AGENT.md#current-v3-behavior) for the current uncertainty policy, shared
+stateful planner/checker, and evaluation commands. Scores and transcripts below are historical;
+the revised code has not yet been scored with live Apertus calls.
+
 How our pipeline turns one photo and one sentence into a robot action. Every example below is
 real output from the ten public scenes.
 
@@ -59,6 +64,10 @@ Apertus does all the language reasoning. SAM 3 and the depth model only see.
 | `apertus_list.py` | Asks Apertus to list the objects in a photo |
 | `scene_graph.py` | Builds the scene graph from the detections |
 | `planner.py` | Asks Apertus for the answer, checks it, retries, converts to the challenge format |
+| `agents.py` | The multi-agent planner: three Apertus agents in a fixed LangGraph graph (`--planner graph`) |
+| `prompts/` | The rules given to Apertus; `--prompt` selects the single-call prompt (default `planner_v2`), and graph-agent flags select v3 overrides |
+| `planning.py` | Shared symbolic state, confirmed blocker ordering, and uncertainty-aware plan validation |
+| `agent_contracts.py` | Agent schemas and local response validation |
 | `dev/check_graph.py` | Development only: compares scene graphs with the ground-truth masks |
 | `dev/ablate.py` | Development only: hides prompts to test how unknown objects are found |
 | `dev/try_prompts.py` | Development only: compares prompt wordings on one scene |
@@ -96,7 +105,7 @@ Notes on the wording, each found by testing:
 - **"grey tray"** and **"black mat"** come back as surfaces with holes where objects sit. That is
   used twice below.
 
-Detections scoring under 0.5 are dropped. Results are cached per photo and prompt, so trying a new
+Detections scoring under 0.5 are dropped. Results are cached per photo (by its content, not its folder name) and prompt, so trying a new
 prompt costs about 2 seconds and rebuilding a scene graph needs no model.
 
 A raw run gives 40–50 detections per photo, many wrong or duplicated. Stage 3 cleans them up.
@@ -175,15 +184,20 @@ This needs no wording at all, so it catches exactly what the prompts miss.
 | `colour` | The median colour of the outline's pixels |
 | `size_mm` | The box, converted to millimetres on the table plane with `calibration.json` |
 | `in` | `grey_tray` or `black_tray`, from where the pixel lies |
-| `pickable` | False for plates, saucers, trays and hands |
+| `pickable` | False for plates, saucers, trays and hands; true for everything else |
+| `why_not_pickable` | The reason in words. Kept in the scene graph file and used in the checker's message; not shown to Apertus up front (see 6.7) |
 | `touching_hand` | True when the outline is within 25 pixels of a hand |
 | `nearest_gap_mm` | Every other object, nearest first, with the gap in millimetres |
 | `found_by` | `prompt`, `apertus` or `leftover` |
 
 A "plate" narrower than 155 mm is renamed `saucer`. SAM 3 does not tell the two apart; size does.
 
-`pickable` is set by type, not by measured size: the gears measure about 90 mm across, wider than
-the 85 mm gripper, yet the instructions expect them to be picked.
+`pickable` is set by what the object is, not by its measured size. The organisers confirmed this: the 85 mm is
+the gripper's opening, and it only has to close on one narrow part of an object (a gear's hub, a mug's rim or
+handle, the edge of a part). Only the plate and the saucer lie flat with no narrow part to close on, so they are
+the only objects that cannot be picked. Everything else can, including objects nobody named. `size_mm` is kept
+as information only. We tried deciding by size instead; it scored 52.2 and 56.5 against 60.5, and that experiment
+is on the `path-a/azam-depth-size` branch.
 
 The graph also lists all objects in `left_to_right` and `top_to_bottom` order. Together with
 `nearest_gap_mm`, this lets Apertus read off "leftmost" and "closest to" without doing arithmetic.
@@ -238,6 +252,11 @@ One object from scene 06, as sent to Apertus:
 
 ---
 
+**More detail is not always better.** We tried adding `why_not_pickable` to every plate, saucer and tray in this
+description. With the same prompt, the score fell from 58.9 to 52.8 (and 52.8 and 51.4 with a prompt that
+explained the field): Apertus started failing instructions that have nothing to do with plates. So the reason is
+only given to Apertus by the checker, when it actually tries to pick such an object.
+
 ## 7. Stage 4: Apertus plans
 
 Apertus gets a fixed set of rules, the scene graph and the instruction. Its reply is forced into a
@@ -266,6 +285,46 @@ The examples in the prompt use invented objects, not instructions from the datas
 
 ---
 
+## 7b. The multi-agent planner (`--planner graph`)
+
+An alternative to the single call above, in `agents.py`. Described in full, with examples, in
+[MULTI_AGENT.md](MULTI_AGENT.md). Three Apertus agents each do one narrow job, wired as a
+fixed LangGraph graph. No agent decides which agent runs next: the route is in code.
+
+```
+instruction + scene graph
+   -> safety agent       is the movement asked for allowed?               -> refuse
+   -> reference agent    which objects does the sentence mean?            -> refuse (not there) / ask_user (unclear)
+   -> order the moves    code: lift off what covers an object first       -> refuse (not pickable, a hand is on it)
+   -> constraint agent   does the instruction forbid moving one of these? -> refuse
+   -> answer
+```
+
+| Step | Sees | Decides |
+|---|---|---|
+| Safety agent | Only the instruction's words | Is it an uncontrolled movement (throw, push, pull out from under) or reaching into a person? |
+| Reference agent | The instruction and the scene description, plus each object's nearest neighbour in every direction and the gap to every other object | Which ids are meant and where they go; or that the object is not there; or that it is unclear |
+| Order the moves | The chosen objects and what covers what | Code, not an agent: whatever lies on an object is lifted aside first, into the tray it is already in |
+| Constraint agent | The instruction and the list of objects that will be moved | Does the instruction say in so many words that one of them must not be moved? Believed only if the words it quotes are really in the instruction |
+
+What we learned building it, in three rounds on the public scenes:
+
+| Round | Score (two runs) | What was wrong |
+|---|---|---|
+| 1. Three agents: safety, reference, planning | 45.0 and 40.3 | Told a hand was in the scene, the safety agent refused everything in scene 10. The planning agent misread relations ("in the black tray" as "covered by the black tray"). The reference agent could not do "left of" or "farthest from". |
+| 2. Safety reads only the words; ordering is code; neighbours and all gaps given; a constraint agent judges the plan | 54.9 and 54.9 | The constraint agent rejected four correct plans, reading "under the yellow gear" as a goal the plan missed. |
+| 3. The constraint agent asks one question and must quote the instruction | 64.1 and 64.1 | Only the near tie in scene 10 (two gears 16 and 17 mm from the mandarin). |
+
+The pattern in all three rounds: an agent does well when it is given one question and only the facts for that
+question, and badly when given a judgement to make or facts it does not need.
+
+Compared with the single call: about three Apertus calls per instruction instead of one (about six minutes for
+the public set instead of four), the same answers on both runs where the single call varied by up to four points,
+and plans that are always in the simplest order because code writes them.
+
+**These prompts were revised three times while looking at the public answers**, so 64.1 overstates what to expect
+on the held-out scenes.
+
 ## 8. Stage 5: the checker
 
 Code checks every plan against the scene graph. If a rule is broken, the error is sent back to
@@ -273,7 +332,7 @@ Apertus in plain words and it tries again, up to two more times.
 
 | Check | Error sent back |
 |---|---|
-| The object to pick is not pickable | "plate cannot be picked up. If the instruction needs that, decide refuse." |
+| The object to pick is not pickable | "plate cannot be picked up: it lies flat and has no narrow part for the gripper to close on… If the instruction needs that, decide refuse and give this as the reason." |
 | A hand is touching the object | "a person's hand is on mug. The robot must not move it: decide refuse." |
 | Something still lies on the object | "red_gear is covered by mug. Move mug aside first, or decide refuse if the instruction does not allow that." |
 | The destination is the object itself | "to is where red_cube is put down, not the object itself." |
@@ -281,6 +340,9 @@ Apertus in plain words and it tries again, up to two more times.
 | The destination is a hand | "the robot must not hand objects to a person: decide refuse." |
 
 If all three attempts fail, the answer is a refusal saying no valid plan could be produced.
+
+Every call to Apertus has a two-minute timeout, and waits and tries again for up to about five minutes when the
+server is busy or unreachable.
 
 Finally the moves are expanded into the challenge's format, and `target_pixel` is set to the scene
 graph's pixel for the first object picked.
@@ -358,11 +420,15 @@ Both are reasoning errors by Apertus. The scene graph was correct in both cases.
 
 ## 11. Known limits
 
+- **Answers change from run to run.** Two runs of the same code can differ by several points, so one run does
+  not show that a change is better or worse.
+
 - **Tuned on the public scenes.** The prompt wording, the rules given to Apertus and about a dozen
   thresholds were all chosen while looking at these ten photos. Some margins are thin: the 12%
   overlap line sits between a true stack at 17% and a non-stack at 6%.
-- **`maybe_on` is not resolved.** In scene 09 the graph says the mandarin may be on two gears. No
-  step decides these yet; Apertus is only told to treat them with care.
+- **`maybe_on` is not resolved by perception.** In scene 09 the graph says the mandarin may be on
+  two gears. The current planner asks when an uncertain relation affects a required pick; it does
+  not automatically promote it to confirmed support. This can lower scores on valid instructions.
 - **Hidden shapes of non-round objects cannot be measured.** A cube hiding one end of a flat
   bracket is only caught by the depth check, as a "maybe".
 - **A fully hidden object is invisible.** Nothing in the photo says it exists.

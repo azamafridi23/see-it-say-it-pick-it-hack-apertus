@@ -10,7 +10,7 @@ Writes pipelines/path_a_azam/out/apertus_objects_<model>.json: per scene, the ra
 """
 from __future__ import annotations
 
-import argparse, base64, json, os, re, time
+import argparse, base64, hashlib, json, os, re, time
 from pathlib import Path
 
 import cv2
@@ -49,6 +49,11 @@ BASE_URL = "https://hackapertus.livemap.sh/v1"
 CACHE = Path(__file__).resolve().parent / "out" / "cache"
 
 
+def photo_key(photo: Path) -> str:
+    """A short fingerprint of the photo's content (the same one run_sam3.py uses)."""
+    return hashlib.sha1(Path(photo).read_bytes()).hexdigest()[:10]
+
+
 def encode(path: Path, max_side: int) -> str:
     img = cv2.imread(str(path), cv2.IMREAD_COLOR)
     scale = min(1.0, max_side / max(img.shape[:2]))
@@ -69,7 +74,8 @@ def parse(text: str):
 def list_objects(client: OpenAI, model: str, photo: Path, max_side: int = 1024, known=None) -> tuple[str, list | None]:
     """Apertus's reply and the parsed list. known = a list of names switches to the with-list experiment."""
     text = PROMPT if known is None else PROMPT_WITH_LIST.format(known=", ".join(known))
-    r = client.chat.completions.create(model=model, temperature=0, max_tokens=500, messages=[{"role": "user", "content": [
+    from planner import with_patience  # here, not at the top: planner.py does not need this file
+    r = with_patience(client.chat.completions.create, model=model, temperature=0, max_tokens=500, messages=[{"role": "user", "content": [
         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encode(photo, max_side)}"}},
         {"type": "text", "text": text}]}])
     reply = r.choices[0].message.content or ""
@@ -78,7 +84,7 @@ def list_objects(client: OpenAI, model: str, photo: Path, max_side: int = 1024, 
 
 def names_for(scene: Path, model: str = MODEL, base_url: str = BASE_URL) -> list[str]:
     """The object names Apertus gives for a scene, to use as extra SAM 3 prompts. Cached; [] when Apertus is unreachable."""
-    path = CACHE / f"{Path(scene).name}_apertus_{model}.json"
+    path = CACHE / f"{Path(scene).name}_{photo_key(Path(scene) / 'rgb.png')}_apertus_{model}.json"
     if path.exists():
         objs = json.loads(path.read_text())["objects"]
     else:
@@ -86,7 +92,7 @@ def names_for(scene: Path, model: str = MODEL, base_url: str = BASE_URL) -> list
             print("  no API_KEY: skipping Apertus's object names")
             return []
         try:
-            reply, objs = list_objects(OpenAI(api_key=os.environ["API_KEY"], base_url=base_url), model, Path(scene) / "rgb.png")
+            reply, objs = list_objects(OpenAI(api_key=os.environ["API_KEY"], base_url=base_url, timeout=120), model, Path(scene) / "rgb.png")
         except Exception as e:
             print(f"  Apertus unreachable ({type(e).__name__}): skipping its object names")
             return []
@@ -108,7 +114,7 @@ def main():
     args = ap.parse_args()
     if not os.environ.get("API_KEY"):
         raise SystemExit("API_KEY is not set: put API_KEY=... in the .env file at the repository root")
-    client = OpenAI(api_key=os.environ["API_KEY"], base_url=args.base_url)
+    client = OpenAI(api_key=os.environ["API_KEY"], base_url=args.base_url, timeout=120)
 
     scenes = [args.data] if (args.data / "rgb.png").exists() else sorted(p for p in args.data.iterdir() if (p / "rgb.png").exists())
     results = {}

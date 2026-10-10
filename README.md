@@ -10,11 +10,42 @@ are in [EVALUATION.md](EVALUATION.md).
 
 | Pipeline | Approach | Grounding (35) | Safety (30) | Script total (65) |
 |---|---|---|---|---|
-| `path_a_azam` | SAM 3 + scene graph + Apertus 1.5 (70B) | 34.1 | 26.3 | **60.5** |
+| `path_a_azam`, multi-agent | SAM 3 + scene graph + three Apertus 1.5 (70B) agents | 34.1 | 30.0 | **64.1** |
+| `path_a_azam`, single call | SAM 3 + scene graph + one Apertus 1.5 (70B) call | 33.2 | 25.6 | **58.9** |
 | `path_a_randy` | to be added | | | |
 | `path_b_wahyu` | Apertus alone, to be added | | | |
 
-The public answers are public, so the held-out scenes are the real test.
+The multi-agent version gave 64.1 on three runs out of three; the single call varies between 58.9 and 60.5.
+The public answers are public, and the multi-agent prompts were tuned on them, so the held-out scenes are the
+real test.
+
+### Every experiment, by branch
+
+All with Apertus 1.5 70B on the ten public scenes. Each score is one full run of the 50 instructions.
+
+| Branch | What it tried | Scores |
+|---|---|---|
+| `path-a/azam` (merged into `main`) | First pipeline: one Apertus call plans everything | 60.5, 60.5 |
+| `path-a/azam-robustness` | Same planner, plus retry on a busy server, caches keyed by photo content, and a worded reason for unpickable objects | 58.9, 58.9 |
+| `path-a/azam-depth-size` | Pickable decided by measured size, with heights from a depth model. Dropped: the organisers confirmed pickable is a property of the object, not a size rule | 52.2, 56.5 |
+| `path-a/azam-multi-agent` | Three Apertus agents (safety, reference, constraint) in a fixed LangGraph graph, with the moves ordered by code | 64.1, 64.1 |
+| `path-a/azam-multi-agent-prompt-validation` | Reply validation, tests and a replay tool, with new v3 prompts and a policy of asking about uncertain stacking | 53.4, 53.4 |
+| `path-a/azam-multi-agent-combined` | **Current.** The validation, tests and replay tool, with the v2 prompts and the one-question constraint agent | **64.1, 64.1, 64.1** |
+
+Smaller comparisons, run on the combined branch:
+
+| Variation | Scores |
+|---|---|
+| The v3 safety prompt in place of v2 | 62.5, 62.5, 62.5 |
+| The v3 reference prompt in place of v2 | 59.6, 59.6 |
+| Single call with the `planner_v2` prompt in place of `planner_v1` | 58.9 |
+| Single call with a "why not pickable" field added to the scene description | 52.8, 52.8, 51.4 |
+| Multi-agent before two redesigns: with a planning agent, then with a constraint agent judging the whole plan | 45.0, 40.3; then 54.9, 54.9 |
+
+What these runs taught us is written up in
+[MULTI_AGENT.md](pipelines/path_a_azam/MULTI_AGENT.md) and [ARCHITECTURE.md](pipelines/path_a_azam/ARCHITECTURE.md).
+The `path-a/azam-robustness`, `path-a/azam-depth-size` and `path-a/azam-multi-agent-combined` branches may exist
+only on the author's machine until pushed.
 
 ## How `path_a_azam` works
 
@@ -22,10 +53,19 @@ The public answers are public, so the held-out scenes are the real test.
 2. **Apertus** lists what it sees, so objects outside the fixed prompt list are found too.
 3. **Code** builds a scene graph: each object's position, size, and what lies on what.
 4. **Apertus** reads the scene graph and the instruction and decides: plan, ask, or refuse.
-5. **Code** checks the answer against the scene graph and asks Apertus to correct it if needed.
+5. **Code** checks the answer against the scene graph.
+
+Step 4 comes in two versions:
+
+- **Single call** (the default): one Apertus call decides everything, and is asked to correct itself if the
+  check fails.
+- **Multi-agent** (`--planner graph`): three Apertus agents in a fixed LangGraph graph. A safety agent judges
+  the movement, a reference agent works out which objects are meant, code orders the moves, and a constraint
+  agent checks whether the instruction forbids any of them.
 
 Apertus chooses the object; the pixel always comes from SAM 3. Details:
-[pipelines/path_a_azam/ARCHITECTURE.md](pipelines/path_a_azam/ARCHITECTURE.md).
+[ARCHITECTURE.md](pipelines/path_a_azam/ARCHITECTURE.md) for the pipeline and
+[MULTI_AGENT.md](pipelines/path_a_azam/MULTI_AGENT.md) for the multi-agent planner.
 
 ## Setup
 
@@ -50,10 +90,20 @@ Then fill in `.env`:
 .venv/bin/python starter/evaluate.py results/path_a_azam.json --data dataset
 ```
 
+For the multi-agent planner, add `--planner graph`:
+
+```
+.venv/bin/python pipelines/path_a_azam/run.py --data dataset --out results/path_a_azam_graph.json --planner graph
+.venv/bin/python starter/evaluate.py results/path_a_azam_graph.json --data dataset
+```
+
 `--data` takes any folder of scenes, so the held-out run is the same command with `--data heldout`.
 
 SAM 3 and the depth model run on your own machine (Apple GPU, CUDA or CPU). Apertus is reached
 through any OpenAI-compatible server: set it with `--base-url` and `--model`.
+
+The rules given to Apertus are text files in `pipelines/path_a_azam/prompts/`. `--prompt planner_v2`
+picks a version; the default is `planner_v1`.
 
 The run also writes `results/path_a_azam.log.jsonl`, with every Apertus reply and correction.
 
