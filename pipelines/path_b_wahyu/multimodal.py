@@ -1,106 +1,66 @@
-import os
-import cv2
-import base64
-import mimetypes
-import json_repair
+"""Orchestrate measured perception and Apertus instruction planning for one scene."""
 
+import json
+import os
+from pathlib import Path
+
+import cv2
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from .template_prompt import template_prompt
+# Keep earlier helper imports working for notebooks and existing callers.
+from .apertus_client import encode_image as encode_image
+from .apertus_client import image_to_data_url as image_to_data_url
+from .apertus_client import make_json_request
+from .apertus_client import parse_model_json as parse_model_json
+from .instruction_planning import plan_instructions
+from .measure import detect_objects
+from .perception import (
+    load_inventory,
+    refine_components,
+    refine_stacks,
+    save_candidate_artifacts,
+)
+from .planner import compile_transfer_groups as compile_transfer_groups
+from .validation import validate_inventory as validate_inventory
+from .validation import validate_pixel as validate_pixel
+from .validation import validate_plan as validate_plan
 
 
-# =========================
-# 1. Load API configuration
-# =========================
-load_dotenv("./.env")
+def llm_processing(
+    instruction, image_path, *, client=None, model=None, debug_dir=None, cache_dir=None
+):
+    """Return validated actions while saving diagnostics even if a stage fails.
 
-
-
-def image_to_data_url(image_path: str) -> str:
-    # Local image data load
-    mime_type, _ = mimetypes.guess_type(image_path)
-
-    if mime_type is None:
-        mime_type = "image/jpeg"
-
-    with open(image_path, "rb") as image_file:
-        encoded_image = base64.b64encode(
-            image_file.read()
-        ).decode("utf-8")
-
-    return f"data:{mime_type};base64,{encoded_image}"
-
-
-def unscale_target_pixel(target_pixel, image):
+    A caller may inject a compatible SDK client for offline replay or local serving.
+    Each instruction is interpreted independently against the original scene.
+    """
+    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+    model = model or os.getenv("APERTUS_MODEL", "apertus-v1.5-70b")
+    client = client or OpenAI(
+        api_key=os.environ["API_KEY"],
+        base_url=os.getenv("APERTUS_BASE_URL", "https://hackapertus.livemap.sh/v1"),
+        timeout=180,
+        max_retries=2,
+    )
+    image = cv2.imread(str(image_path))
+    if image is None:
+        raise FileNotFoundError(image_path)
     height, width = image.shape[:2]
-
-
-    u = round(target_pixel[0] / 1000 * width)
-    v = round(target_pixel[1] / 1000 * height)
-
-    return u, v
-
-
-def llm_processing(instruction, image_path):
-    # Define client config
-    client = OpenAI(
-        api_key=os.getenv("API_KEY"),
-        base_url="https://hackapertus.livemap.sh/v1"
-    )
-
-    # Define image path
-    image = cv2.imread(image_path)
-
-
-    response = client.chat.completions.create(
-        model="apertus-v1.5-70b",
-        messages=[
-            {
-                "role": "system",
-                "content": template_prompt
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": image_to_data_url(image_path)
-                        }
-                    },
-                    {
-                        "type": "text",
-                        "text": instruction
-                    }
-                ]
-            }
-        ]
-    )
-
-    response = response.choices[0].message.content
-    response_json = json_repair.loads(response)
-
-
-    # Bbox to u, v
-    for instruction in response_json:
-        actions = instruction["actions_data"]
-        for action in actions:
-            if "pixel" in action.keys() and action["pixel"] is not None:
-                u, v = unscale_target_pixel(
-                    action["pixel"],
-                    image
-                )
-                action["pixel"] = [u ,v]
-
-    return response_json
-
-
-
-if __name__ == "__main__":
-    response_json = llm_processing(
-        # "move everything from the grey tray to the black tray",
-        "pick up the red gear",
-        "./dataset/scene_01/rgb.png"
-    )
-    print(response_json)
+    candidates, mask = detect_objects(image)
+    artifacts = {"candidates": candidates}
+    save_candidate_artifacts(image, candidates, mask, debug_dir)
+    request = make_json_request(client, model, artifacts)
+    try:
+        inventory = load_inventory(
+            image, image_path, candidates, client, model, cache_dir, request, artifacts
+        )
+        inventory = refine_components(image, inventory, candidates, request, artifacts)
+        inventory = refine_stacks(image, inventory, candidates, request, artifacts)
+        return plan_instructions(
+            instruction, inventory, request, artifacts, width, height
+        )
+    finally:
+        # Preserve failed replies as well as accepted stages for diagnosis.
+        if debug_dir:
+            (Path(debug_dir) / "trace.json").write_text(json.dumps(artifacts, indent=2))

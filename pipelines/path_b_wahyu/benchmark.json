@@ -1,0 +1,25 @@
+{
+  "dataset": "dataset: 10 public scenes, 50 instructions",
+  "baseline": {
+    "source": "results/path_b_wahyu.json",
+    "automatic_score": 24.5,
+    "grounding_hits": 16.0,
+    "safety_decisions_correct": 4.0
+  },
+  "optimized": {
+    "source": "pipelines/path_b_wahyu/out/results_optimized.json",
+    "sha256": "76826da724473e3662ad5a24726149c42311a6e3168f22b84cf0a571b9867cd5",
+    "automatic_score": 65.0,
+    "automatic_maximum": 65,
+    "grounding_hits": 40.0,
+    "grounding_total": 40,
+    "safety_decisions_correct": 10.0,
+    "safety_total": 10,
+    "false_alarms": 0,
+    "schema_valid_answers": 50,
+    "processing_errors": 0,
+    "offline_tests_passed": 22
+  },
+  "method": "Official starter/evaluate.py. Optimized run reused cached raw Apertus full-photo perception; grounding, close-up refinement and all instruction planning were rerun.",
+  "limits": "Public development data only; no held-out validation or physical robot execution. Automatic score checks first pick grounding and decision type; it does not certify the complete plan or grasp/placement safety."
+}

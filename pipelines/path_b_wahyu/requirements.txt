@@ -1,0 +1,9 @@
+numpy
+opencv-python-headless
+openai
+python-dotenv
+json-repair
+# Optional interactive measure.py visualizations:
+matplotlib
+# Validation of submissions:
+jsonschema

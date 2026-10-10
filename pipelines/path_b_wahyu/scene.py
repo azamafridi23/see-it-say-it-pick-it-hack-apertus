@@ -1,8 +1,10 @@
+"""Read scene files while keeping evaluation labels out of model inputs."""
+
 import json
 from pathlib import Path
 
 
-def extract_instructions(instruction_path: Path) -> list[dict]:
+def extract_instructions(instruction_path: Path) -> str:
     """
     Parse instructions.txt.
 
@@ -11,7 +13,6 @@ def extract_instructions(instruction_path: Path) -> list[dict]:
         simple      pick up the mandarin
         relative    pick up the object to the left of the mug
     """
-
 
     all_instructions = ""
     with instruction_path.open("r", encoding="utf-8") as f:
@@ -29,21 +30,25 @@ def extract_instructions(instruction_path: Path) -> list[dict]:
             # Prefer TAB separator because dataset format uses TAB
             parts = line.split("\t", maxsplit=1)
 
-            # Fallback in case file uses spaces instead
-            if len(parts) != 2:
-                parts = line.split(maxsplit=1)
-
-            if len(parts) != 2:
-                print(
-                    f"Warning: could not parse line in "
-                    f"{instruction_path}: {line}"
+            if len(parts) == 2:
+                _, instruction = parts
+            else:
+                # Also accept unlabelled instructions without dropping the verb.
+                words = line.split(maxsplit=1)
+                categories = {
+                    "simple",
+                    "relative",
+                    "multistep",
+                    "ambiguous",
+                    "impossible",
+                    "unsafe",
+                }
+                instruction = (
+                    words[1] if len(words) == 2 and words[0] in categories else line
                 )
-                continue
-
-            category, instruction = parts
 
             all_instructions += f"- {instruction.strip()}\n"
-    
+
     return all_instructions
 
 
@@ -51,12 +56,9 @@ def load_scenes(scene_main_folder_path: str | Path) -> dict:
     """
     Load instructions from all scene_xx directories.
 
-    Returns:
-        {
-            "scene_01": [...],
-            "scene_02": [...],
-            ...
-        }
+    Return a sorted mapping from scene names to RGB paths and instruction text.
+    Scene files must use rgb.png and instructions.txt; missing instruction files
+    are reported and skipped. Category prefixes are discarded during parsing.
     """
 
     scene_main_folder_path = Path(scene_main_folder_path)
@@ -74,19 +76,14 @@ def load_scenes(scene_main_folder_path: str | Path) -> dict:
         instruction_file = scene_dir / "instructions.txt"
 
         if not instruction_file.exists():
-            print(
-                f"Warning: instructions.txt not found in "
-                f"{scene_dir}"
-            )
+            print(f"Warning: instructions.txt not found in " f"{scene_dir}")
             continue
 
-        instructions = extract_instructions(
-            instruction_file
-        )
+        instructions = extract_instructions(instruction_file)
 
         scenes[scene_dir.name] = {
             "image_scene_path": scene_dir / "rgb.png",
-            "instruction_data": instructions
+            "instruction_data": instructions,
         }
 
     return scenes
@@ -94,37 +91,13 @@ def load_scenes(scene_main_folder_path: str | Path) -> dict:
 
 def save_json(data: dict, output_path: str | Path):
     """
-    Save parsed scenes into JSON file.
+    Save a JSON checkpoint, creating its parent directory when necessary.
     """
 
     output_path = Path(output_path)
 
     # Automatically create output directory
-    output_path.parent.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with output_path.open(
-        "w",
-        encoding="utf-8"
-    ) as f:
-        json.dump(
-            data,
-            f,
-            indent=4,
-            ensure_ascii=False
-        )
-
-
-if __name__ == "__main__":
-    dataset_path = Path("./dataset")
-    output_path = Path("./results/scenes.json")
-
-    scenes = load_scenes(dataset_path)
-    # print(scenes)
-
-    # save_json(
-    #     scenes,
-    #     output_path
-    # )
+    with output_path.open("w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)

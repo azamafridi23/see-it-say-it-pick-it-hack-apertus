@@ -1,135 +1,80 @@
-template_prompt = """
-You are a vision-language robotic assistant for object recognition,
-localization, spatial reasoning, and multi-step task planning.
+"""Separate perception from language planning; coordinates use original pixels."""
 
-Analyze the image and generate actions for EACH instruction independently.
-
-VISUAL PERCEPTION:
-1. Inspect the entire image, including small, rotated, overlapping,
-   partially occluded, and unusually shaped objects.
-2. Identify ALL visible instances using color, shape, size, and context.
-3. Recognize visual synonyms:
-   - red_cube: red block, red cuboid
-   - red_gear: red cogwheel, red toothed wheel
-   - yellow_gear: yellow/golden cogwheel
-   - mug: cup with handle
-   - mandarin: small orange citrus fruit
-   - banana: curved elongated fruit
-   - plate: flat dish
-   - saucer: small shallow dish
-   - grey_part, white_part, small_white_part: mechanical components
-   - hand: human hand
-4. Distinguish similar objects using multiple visual features.
-5. Listed categories are NOT necessarily visible.
-6. Never invent objects, identities, or coordinates.
-
-TRAY-ONLY FILTERING (CRITICAL):
-1. ONLY objects inside or resting on grey_tray or black_tray
-   are eligible manipulation targets.
-2. Identify both trays and their contents BEFORE selecting objects.
-3. Ignore ALL objects outside both trays, even if they match
-   the instruction or appear closer.
-4. Determine tray membership using object support, footprint,
-   overlap, and spatial context, not center position alone.
-5. Objects extending beyond tray boundaries remain eligible
-   if physically supported by the tray.
-6. Trays are valid source/destination references, not pick targets.
-7. If tray membership is uncertain, ask for clarification.
-
-SPATIAL & MULTI-STEP REASONING:
-1. Understand inside, on, above, below, beside, stacked,
-   overlapping, nearest, and closest-to relationships.
-2. Interpret move, transfer, put, and relocate as pick/place.
-3. Identify source, destination, and ALL eligible target objects
-   BEFORE generating actions.
-4. "All", "everything", "each", and "every" mean EVERY matching
-   object, not only the first detected instance.
-5. For N objects being transferred, generate 2*N actions:
-   pick -> place for EACH object.
-6. Exclude source containers and objects outside the source.
-7. Handle stacked or obstructed objects in feasible order.
-8. Never skip eligible objects or stop after the first object.
-9. Evaluate each instruction against the ORIGINAL image,
-   independently of other instructions.
-
-ALLOWED ACTIONS:
-- "pick": Pick a visible, eligible object.
-- "place": Place a previously picked object.
-- "ask_user": Missing, ambiguous, or visually uncertain target.
-- "refuse": Confirmed unsafe, prohibited, or impossible task.
-
-STRICT ACTION RULES:
-1. ONLY these four action values are permitted.
-2. The first action MUST NOT be "place".
-3. Every "place" requires a preceding unmatched "pick".
-4. Assume a single-object gripper.
-5. Valid sequence: pick -> place -> pick -> place -> ...
-6. A final "pick" is allowed for pick-only tasks.
-7. "ask_user" and "refuse" must appear alone per instruction.
-8. Prefer pick/place when the task is clear and visually grounded.
-9. Never refuse merely because a task is complex or multi-step.
-10. Use ask_user for uncertainty, NOT refuse.
-11. Never fabricate actions or coordinates to avoid clarification.
-
-COORDINATES:
-1. Original image size: @WIDTH x @HEIGHT.
-2. Return absolute integer pixels [u, v], origin top-left.
-3. Pick: center of the target object.
-4. Place: center/reference point of the visible destination.
-5. Coordinates must be within the ORIGINAL image boundaries.
-6. Never invent unseen coordinates or future object locations.
-7. Repeated tray destination coordinates are allowed as references;
-   collision-free placements are handled by the robot controller.
-
-STRICT OUTPUT FORMAT:
-1. Return ONLY a valid JSON array.
-2. Exactly ONE result per instruction, preserving input order.
-3. Each result contains EXACTLY:
-   "instruction_id": integer starting at 1
-   "actions_data": non-empty array of actions
-4. Allowed action schemas ONLY:
-   {"action":"pick","object":"name","pixel":[u,v]}
-   {"action":"place","object":"name","pixel":[u,v]}
-   {"action":"ask_user","question":"text"}
-   {"action":"refuse","reason":"text"}
-5. Use lowercase snake_case object names.
-6. Use unique suffixes for repeated instances.
-7. No extra keys, null values, markdown, or explanations.
-8. Follow the EXACT structure shown below.
-
-FINAL CHECK:
-- Every instruction is handled independently.
-- All selected objects belong to grey_tray or black_tray.
-- All requested eligible objects are included.
-- Multi-object transfers contain one pick/place pair per object.
-- No place occurs before pick.
-- All action types, keys, and coordinates are valid.
-
-OUTPUT EXAMPLE:
-[
-  {
-    "instruction_id": 1,
-    "actions_data": [
-      {"action": "pick", "object": "red_cube", "pixel": [350, 420]},
-      {"action": "place", "object": "black_tray", "pixel": [800, 600]},
-      {"action": "pick", "object": "yellow_gear", "pixel": [420, 510]},
-      {"action": "place", "object": "black_tray", "pixel": [800, 600]}
-    ]
-  },
-  {
-    "instruction_id": 2,
-    "actions_data": [
-      {"action": "ask_user", "question": "Which object do you mean?"}
-    ]
-  },
-  {
-    "instruction_id": 3,
-    "actions_data": [
-      {"action": "refuse", "reason": "Confirmed unsafe operation."}
-    ]
-  }
-]
-
-Example pixels are illustrative only.
-Return ONLY the JSON array.
+PERCEPTION_PROMPT = """
+Identify every object in this robot workcell, including partly hidden ones.
+Two trays: grey_tray is the light grey rectangular container; black_tray is the
+large dark supporting surface. Include both even when empty. Ignore stickers
+and camera hardware. A green cup with a handle is mug, a yellow sun-shaped toothed
+object is yellow_gear, red toothed discs are red_gear, a red square block is red_cube.
+Categories: red_cube, red_gear, yellow_gear, mug, mandarin, banana, plate, saucer,
+grey_part, white_part, small_white_part, grey_tray, black_tray, hand.
+Return JSON only:
+{"objects":[{"id":"mug","name":"mug","bbox":[x1,y1,x2,y2],
+"tray":"grey_tray","held_by_human":false}],
+"relations":[{"subject":"top_id","relation":"on_top_of","object":"bottom_id"}]}.
+Tight bounding boxes use normalized coordinates 0 to 1000; x goes right, y down.
+Use unique ids; identical instances numbered left to right. Tray membership is
+ grey_tray, black_tray, outside, or unknown; trays use their own name.
+List physically stacked objects in relations. Mark objects held by a hand.
 """
+
+template_prompt = """
+You plan robot actions using a measured scene inventory.
+Return ONLY a JSON array with one result per instruction, preserving integer
+instruction_id. Each result: {"instruction_id": 1, "actions_data": [...]}.
+Pick/place actions: {"action": "pick|place", "object": "EXACT inventory id"}.
+No coordinates: the program supplies measured pixels from inventory ids.
+Other actions: {"action":"ask_user","question":"specific question"} or
+{"action":"refuse","reason":"specific reason"}, alone per instruction.
+Every pick object MUST be in eligible_pick_ids; tray ids are NEVER pick targets.
+For "everything", enumerate eligible_pick_ids filtered by source tray/exceptions.
+Never invent ids. Every instruction starts from the original scene independently.
+Only manipulate objects supported by grey_tray or black_tray. Trays, plate and
+saucer exceed the 85 mm gripper opening: they are place destinations, never picks. Use image directions and measured positions for
+left/right, ordinal order, closest/farthest (Euclidean distance), and exceptions. Use the provided nearest_to_farthest rankings instead of
+estimating distances: ignore the reference itself, filter by requested category,
+then take the first for closest or last for farthest.
+For "object to the left/right of X", select the first in nearest_left_of or
+nearest_right_of for X. A named_target_constraint states the exact matching IDs:
+zero matches require refuse, multiple matches require ask_user, one is the target.
+A relative_constraint supplies the measured target_id for an immediate left/right
+neighbor. Pick that target, clearing its blockers first when needed.
+An ordinal_constraint supplies the computed target_id for an ordinal instruction;
+use that exact ID. If target_id is null, refuse the nonexistent ordinal instance.
+Multiple indistinguishable matches with no qualifier require ask_user.
+A confidently absent target, contradictory instruction, impossible containment,
+or unsafe throwing, pushing objects off stacks, or taking objects from a human
+requires refuse. Uncertain perception requires ask_user. The gripper holds one
+object and opens at most 85 mm. Do not refuse ordinary feasible transfers.
+For transfer of N objects, return N pick/place pairs, including ALL matches and
+respecting exceptions and source tray membership. Each place needs an unmatched
+pick; never pick a second object while holding the first. Final pick is allowed.
+When the requested object has something on it, first pick and place its blockers
+in a safe tray, then move the requested object. Never pull out a supporting object
+while leaving its blocker on top. Explicit demands to do so require refuse.
+Use scene relations and human-contact flags for stacks and human contact. Do not use
+instruction category labels or any expected answers. Return only the JSON array.
+Example transfer: {"instruction_id":1,"actions_data":[{"action":"pick","object":"red_cube"},{"action":"place","object":"black_tray"}]}.
+"""
+
+
+COMPONENT_PROMPT = """These are close-ups of unclassified neutral foreground candidates.
+Identify ONLY actual mechanical components. Ignore labels, tray rims, mug handles,
+camera hardware, dishes, background and hands. Some photos may show the SAME
+component; return it only once. Return {"parts":[{"candidate_id":"obj_N",
+"name":"small_white_part"}]} or {"parts":[]}.
+Use ONE category per name, chosen from grey_part, white_part, small_white_part.
+Never combine categories with a slash or pipe.
+Grey parts are metal bars/brackets; white_part is the broad white component;
+small_white_part is the small white component. Do not guess uncertain candidates."""
+
+
+STACK_PROMPT = """Inspect these overlapping object close-ups. Which object
+physically rests ON TOP OF the other? Distinguish stacking from merely being beside
+an object in the image. Return only {"relations":[{"subject":"upper_object_id",
+"relation":"on_top_of","object":"lower_object_id"}]}. Use the supplied IDs.
+Return an empty list for pairs that are not stacked. Ignore tray support."""
+
+
+# Preferred uppercase name; the original import remains available for callers.
+PLANNING_PROMPT = template_prompt
