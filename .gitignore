@@ -9,3 +9,25 @@ pipelines/*/out/
 docs/adr
 docs/figures
 docs/report
+
+# Secrets: every env file except the template
+.env.*
+!.env.example
+
+# Model weights and caches: downloaded on first run, never committed
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+*.onnx
+.cache/
+
+# The app (apps/): dependencies, build output, local run data
+node_modules/
+.next/
+*.tsbuildinfo
+artifacts/simulator/
+
+# Slides: generated intermediates (the sources and PDFs stay committable)
+docs/slides/fig/canva/
+docs/slides/*.txt
