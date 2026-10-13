@@ -80,8 +80,8 @@ python pipelines/path_a/run.py --data dataset --out results/path_a.json
 python starter/evaluate.py results/path_a.json --data dataset
 ```
 
-Run both from the repository root. It needs `HF_TOKEN` (SAM 3 is a gated model) and `APERTUS_API_KEY` (Apertus) in a
-`.env` file at the repository root; see `.env.example`.
+Run both from the repository root. It needs `APERTUS_API_KEY` (Apertus) in a `.env` file at the repository root; see
+`.env.example`. SAM 3 downloads without a token from an ungated copy of Meta's weights (`run_sam3.py`).
 
 ---
 

@@ -4,7 +4,8 @@
     python pipelines/path_a/run_sam3.py dataset/scene_06
     python pipelines/path_a/run_sam3.py dataset/scene_06 --prompts "red gear" "yellow gear" --threshold 0.4
 
-Needs HF_TOKEN in the .env file at the repository root: facebook/sam3 is a gated model.
+Downloads Meta's SAM 3 weights on first use, without a Hugging Face token: facebook/sam3 is gated, so the default is
+an ungated copy with byte-identical weights. SAM3_MODEL=facebook/sam3 (with HF_TOKEN) loads the official repository.
 
 Writes pipelines/path_a/out/<scene>_overlay.jpg (masks drawn on the photo, to check by eye) and
 out/<scene>_detections.json (label, score, box, an interior pixel, mask area).
@@ -21,7 +22,7 @@ os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")  # ops MPS lacks run o
 
 from dotenv import load_dotenv
 
-load_dotenv()  # HF_TOKEN from the nearest .env, searching upwards from this file; before transformers is imported
+load_dotenv()  # SAM3_MODEL / HF_TOKEN from the nearest .env, searching upwards from this file; before transformers is imported
 
 import cv2
 import numpy as np
@@ -39,19 +40,21 @@ PROMPTS = ["red gear", "yellow gear", "small yellow gear", "red cube", "mug", "m
 THRESHOLD = 0.5
 DEVICE = "mps" if torch.backends.mps.is_available() else "cpu"
 CACHE = Path(__file__).resolve().parent / "out" / "cache"
+# Meta's SAM 3 (SAM License) from an ungated copy: model.safetensors has the same SHA-256 as facebook/sam3
+# (6d06f0a5f84e...). Pinned to a commit, so a later change to that repository cannot change our results.
+MIRROR, MIRROR_REVISION = "jetjodh/sam3", "1aa50ce07302cb375f85d8084b68a0fb378b8d85"
+SAM3_MODEL = os.environ.get("SAM3_MODEL") or MIRROR
+SAM3_REVISION = MIRROR_REVISION if SAM3_MODEL == MIRROR else None
 
 _loaded = {}
 
 
 def load(device: str = DEVICE):
     if device not in _loaded:
-        token = os.environ.get("HF_TOKEN")
-        if not token:
-            raise SystemExit("HF_TOKEN is not set: put HF_TOKEN=... in the .env file at the repository root "
-                             "(facebook/sam3 is a gated model)")
+        token = os.environ.get("HF_TOKEN") or None  # only needed for the gated facebook/sam3
         t0 = time.time()
-        model = Sam3Model.from_pretrained("facebook/sam3", token=token).to(device).eval()
-        processor = Sam3Processor.from_pretrained("facebook/sam3", token=token)
+        model = Sam3Model.from_pretrained(SAM3_MODEL, revision=SAM3_REVISION, token=token).to(device).eval()
+        processor = Sam3Processor.from_pretrained(SAM3_MODEL, revision=SAM3_REVISION, token=token)
         print(f"model loaded on {device} in {time.time() - t0:.0f}s")
         _loaded[device] = (model, processor)
     return _loaded[device]

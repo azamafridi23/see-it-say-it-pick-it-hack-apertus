@@ -98,7 +98,7 @@ the organisers' `starter/evaluate.py`. The held-out run is the same command with
 | | `path_a` | `path_b` |
 |---|---|---|
 | Vision model | SAM 3 + a depth model, on your machine (Apple GPU, CUDA or CPU) | none: Apertus finds the objects |
-| Hugging Face token | yes: SAM 3 is a gated model | no |
+| Hugging Face token | no: the SAM 3 weights download from an ungated copy | no |
 | Apertus server | any OpenAI-compatible server; default: the hosted endpoint | any OpenAI-compatible server; default: a local one |
 | Offline tests | `test_agents.py` | `tests/`, no key needed |
 
@@ -130,8 +130,10 @@ to the hosted endpoint; `--base-url` and `--model` override them for one run:
 
 ### Path A (our submission: the multi-agent planner)
 
-1. Install its dependencies, and add `HF_TOKEN` to `.env`. SAM 3 is a gated model, so request access at
-   https://huggingface.co/facebook/sam3 first.
+1. Install its dependencies. No Hugging Face token is needed: on the first run, Meta's SAM 3 weights (3.4 GB)
+   download from [`jetjodh/sam3`](https://huggingface.co/jetjodh/sam3), an ungated copy whose weights file is
+   byte-identical to the gated `facebook/sam3` (same SHA-256), pinned to one commit. To use the official repository
+   instead, set `SAM3_MODEL=facebook/sam3` and an approved `HF_TOKEN` in `.env`.
 
    ```
    .venv/bin/pip install -r pipelines/path_a/requirements.txt
@@ -193,4 +195,5 @@ public scenes). Offline tests, no key needed:
 
 ## Licence
 
-Code: Apache 2.0. Data in `dataset/`: CC BY 4.0. SAM 3 is used under Meta's SAM License.
+Code: Apache 2.0. Data in `dataset/`: CC BY 4.0. SAM 3 is Meta's model, used under the SAM License, which
+permits redistribution; the weights come from the `jetjodh/sam3` copy, which includes that licence.
