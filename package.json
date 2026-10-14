@@ -1,0 +1,12 @@
+{
+  "name": "see-it-say-it-simulator",
+  "private": true,
+  "workspaces": ["apps/web"],
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "npm run dev --workspace apps/web",
+    "dev:api": "python3 -m uvicorn apps.api.main:app --host 127.0.0.1 --port 8000",
+    "build": "npm run build --workspace apps/web",
+    "typecheck": "npm run typecheck --workspace apps/web"
+  }
+}

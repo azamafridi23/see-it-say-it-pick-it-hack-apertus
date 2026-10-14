@@ -186,6 +186,10 @@ public scenes). Offline tests, no key needed:
 
 ## Repository layout
 
+### Local robot action app
+
+The Next.js + Python **Pick Lab** playground lives in `apps/`. It includes saved-result replay, an animated 2D arm, a photo view with target pixels, and explicit live inference for Path A and Path B. See [apps/README.md](apps/README.md) for setup and limitations. Start both services from this repository's root with `npm run dev` after installing the app dependencies. Replay makes no Apertus API calls.
+
 | Path | What it is |
 |---|---|
 | `pipelines/path_a/`, `pipelines/path_b/` | One folder per solution, each with its own `run.py`, `requirements.txt` and architecture notes |
