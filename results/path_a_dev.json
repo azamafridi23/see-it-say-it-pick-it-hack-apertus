@@ -962,42 +962,11 @@
     },
     {
       "instruction_id": "scene_09_i4",
-      "target_pixel": [
-        959,
-        872
-      ],
+      "target_pixel": null,
       "actions": [
         {
-          "action": "pick",
-          "object": "red_cube",
-          "pixel": [
-            959,
-            872
-          ]
-        },
-        {
-          "action": "place",
-          "object": "grey_tray",
-          "pixel": [
-            1003,
-            287
-          ]
-        },
-        {
-          "action": "pick",
-          "object": "grey_part",
-          "pixel": [
-            527,
-            838
-          ]
-        },
-        {
-          "action": "place",
-          "object": "plate",
-          "pixel": [
-            1866,
-            1299
-          ]
+          "action": "ask_user",
+          "question": "The red cube is not on the plate; it is in the grey tray. Which red cube do you mean, and where should the grey part be placed?"
         }
       ]
     },

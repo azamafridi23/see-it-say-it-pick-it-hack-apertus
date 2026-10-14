@@ -262,7 +262,7 @@ The full log of Apertus's weaknesses, with evidence, is in
 ## Run
 
 ```
-pip install -r pipelines/path_b/requirements.txt
+pip install -r requirements.txt
 python pipelines/path_b/run.py --data dataset --out results/path_b.json
 python starter/evaluate.py results/path_b.json --data dataset
 ```

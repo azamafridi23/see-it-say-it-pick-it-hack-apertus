@@ -65,7 +65,7 @@ Apertus does all the language reasoning. SAM 3 and the depth model only see.
 | `scene_graph.py` | Builds the scene graph from the detections |
 | `planner.py` | Asks Apertus for the answer, checks it, retries, converts to the challenge format |
 | `agents.py` | The multi-agent planner: three Apertus agents in a fixed LangGraph graph (`--planner graph`) |
-| `prompts/` | The rules given to Apertus; `--prompt` selects the single-call prompt (default `planner_v2`), and graph-agent flags select v3 overrides |
+| `prompts/` | The rules given to Apertus; `workcell.ini` names the ones in use (single call `planner_v1`; agents safety v2, reference v2, constraint v4); `--prompt` and the agent flags override them |
 | `planning.py` | Shared symbolic state, confirmed blocker ordering, and uncertainty-aware plan validation |
 | `agent_contracts.py` | Agent schemas and local response validation |
 | `dev/check_graph.py` | Development only: compares scene graphs with the ground-truth masks |

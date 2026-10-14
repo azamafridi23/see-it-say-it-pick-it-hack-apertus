@@ -1,96 +1,195 @@
-"""Shared symbolic state for ordering and checking moves. No model calls or image dependencies."""
+"""Order and check moves on the scene's support relations.
+
+Shared by both planners. No model calls and no image dependencies.
+"""
 from __future__ import annotations
+
+from workcell import CELL
 
 
 class PlanIssue(ValueError):
+    """A plan cannot go ahead; ``decision`` says whether to refuse or ask."""
+
     def __init__(self, message: str, decision: str = "refuse"):
+        """Store the message and the decision.
+
+        Args:
+            message: What is wrong, worded for the person.
+            decision: ``"refuse"`` or ``"ask_user"``.
+        """
         super().__init__(message)
         self.decision = decision
 
 
-# What to do when an object only MAY be resting on the one that has to move (maybe_on):
-#   "lift"  lift it off first, as if it were resting there. The public answers expect a plan in these cases.
-#   "ask"   ask the person. More cautious; on the public scenes it turned two valid plans into questions.
-UNCERTAIN_SUPPORT = "lift"
+# lift or ask, from workcell.ini; a module attribute so tests can swap it.
+UNCERTAIN_SUPPORT = CELL.uncertain_support
 
 
 class SceneState:
-    """Track current support relations, rather than treating every previously moved object as clear.
-    uncertain: "lift" counts maybe_on as resting on, "ask" stops with a question, "ignore" lets the move through."""
+    """Track the current support relations while moves are made.
+
+    Moved objects are not simply treated as clear: what lies on what is
+    updated with every move.
+    """
 
     def __init__(self, graph: dict, uncertain: str = "ask"):
-        self.objects = {o["id"]: o for o in graph["objects"]}
-        self.covers = {oid: set(o.get("covered_by", [])) for oid, o in self.objects.items()}
+        """Read the support relations from the scene graph.
+
+        Args:
+            graph: The scene graph.
+            uncertain: How to treat maybe_on. ``"lift"`` counts it as
+                resting on, ``"ask"`` stops with a question, ``"ignore"``
+                lets the move through.
+
+        Raises:
+            PlanIssue: The scene graph refers to an object it lacks.
+        """
+        self.objects = {obj["id"]: obj for obj in graph["objects"]}
+        self.covers = {oid: set(obj.get("covered_by", []))
+                       for oid, obj in self.objects.items()}
         self.uncertain = {oid: set() for oid in self.objects}
         for oid, obj in self.objects.items():
             for lower in obj.get("on", []):
                 if lower not in self.objects:
-                    raise PlanIssue(f"Scene graph refers to missing object {lower}.")
+                    raise PlanIssue(
+                        f"Scene graph refers to missing object {lower}.")
+
                 self.covers[lower].add(oid)
+
             for lower in obj.get("maybe_on", []):
                 if lower not in self.objects:
-                    raise PlanIssue(f"Scene graph refers to missing object {lower}.")
+                    raise PlanIssue(
+                        f"Scene graph refers to missing object {lower}.")
+
                 self.uncertain[lower].add(oid)
+
         for oid, covering in self.covers.items():
             if covering - self.objects.keys():
                 raise PlanIssue(f"Scene graph has unknown blockers for {oid}.")
+
             self.uncertain[oid] -= covering
             if uncertain == "lift":
                 covering |= self.uncertain[oid]
+
             if uncertain != "ask":
                 self.uncertain[oid] = set()
+
         self.held = None
 
     def require_pickable(self, oid: str):
+        """Check that the robot may pick up an object.
+
+        Args:
+            oid: The object's id.
+
+        Raises:
+            PlanIssue: It is missing, touched by a hand, or not pickable.
+        """
         if oid not in self.objects:
             raise PlanIssue(f"There is no object {oid} in the scene.")
+
         obj = self.objects[oid]
         if obj.get("touching_hand") or obj.get("label") == "hand":
-            raise PlanIssue(f"A person's hand is on {oid}, so the robot must not move it.")
+            raise PlanIssue(f"A person's hand is on {oid}, so the robot must "
+                            f"not move it.")
+
         if not obj.get("pickable", False):
-            raise PlanIssue(f"{oid} cannot be picked up: {obj.get('why_not_pickable') or 'it is not pickable'}.")
+            raise PlanIssue(f"{oid} cannot be picked up: "
+                            f"{obj.get('why_not_pickable')
+                               or 'it is not pickable'}.")
 
     def require_resolved(self, oid: str):
+        """Check that nothing only may be resting on an object.
+
+        Args:
+            oid: The object's id.
+
+        Raises:
+            PlanIssue: Something may be resting on it (a question).
+        """
         if self.uncertain[oid]:
             upper = ", ".join(sorted(self.uncertain[oid]))
-            raise PlanIssue(f"Is {upper} resting on {oid}, or only beside it? I need to know before moving {oid}.",
+            raise PlanIssue(f"Is {upper} resting on {oid}, or only beside "
+                            f"it? I need to know before moving {oid}.",
                             "ask_user")
 
     def move(self, oid: str, destination: str | None):
+        """Move an object, or pick it up and hold it.
+
+        Args:
+            oid: The object to move.
+            destination: Where to put it, or None to hold it.
+
+        Raises:
+            PlanIssue: The move is not allowed or not possible now.
+        """
         self.require_pickable(oid)
         if self.held is not None:
-            raise PlanIssue(f"{self.held} is still in the gripper. Put it down before another pick.")
+            raise PlanIssue(f"{self.held} is still in the gripper. Put it "
+                            f"down before another pick.")
+
         self.require_resolved(oid)
         if self.covers[oid]:
-            raise PlanIssue(f"{oid} is covered by {', '.join(sorted(self.covers[oid]))}. Move the covering objects first.")
+            raise PlanIssue(f"{oid} is covered by "
+                            f"{', '.join(sorted(self.covers[oid]))}. Move "
+                            f"the covering objects first.")
+
         if destination == oid:
             raise PlanIssue(f"{oid} cannot be placed on itself.")
+
         if destination is not None:
             if destination not in self.objects:
-                raise PlanIssue(f"There is no destination {destination} in the scene.")
+                raise PlanIssue(f"There is no destination {destination} in "
+                                f"the scene.")
+
             dest = self.objects[destination]
             if dest.get("label") == "hand" or dest.get("touching_hand"):
-                raise PlanIssue(f"The robot must not place objects onto a hand or an object touching a hand: {destination}.")
-            # A movable destination needs a clear support surface. Tray/plate placement geometry is
-            # not certified by this symbolic check; that remains a perception/execution limitation.
+                raise PlanIssue(f"The robot must not place objects onto a "
+                                f"hand or an object touching a hand: "
+                                f"{destination}.")
+
+            # A movable destination needs a clear support surface.
+            # Tray/plate placement geometry is not certified by this
+            # symbolic check; that remains a perception/execution
+            # limitation.
             if dest.get("pickable"):
                 uncertain = self.uncertain[destination] - {oid}
                 if uncertain:
-                    raise PlanIssue(f"Is {destination} clear for placement? Its support relations are uncertain.", "ask_user")
+                    raise PlanIssue(f"Is {destination} clear for placement? "
+                                    f"Its support relations are uncertain.",
+                                    "ask_user")
+
                 if self.covers[destination] - {oid}:
-                    raise PlanIssue(f"The destination {destination} is covered by another object.", "ask_user")
+                    raise PlanIssue(f"The destination {destination} is "
+                                    f"covered by another object.",
+                                    "ask_user")
+
         for relations in (self.covers, self.uncertain):
             for upper in relations.values():
                 upper.discard(oid)
+
         if destination is None:
             self.held = oid
         else:
             self.covers[destination].add(oid)
 
 
-def order_moves(tasks: list, graph: dict, uncertain: str | None = None) -> dict:
-    """Clear whatever lies on an object before moving it. What only may be lying on it is handled as
-    UNCERTAIN_SUPPORT says (or as the uncertain argument says): lifted off first, or asked about."""
+def order_moves(tasks: list, graph: dict,
+                uncertain: str | None = None) -> dict:
+    """Order the moves, clearing whatever lies on an object before moving it.
+
+    What only may be lying on it is handled as UNCERTAIN_SUPPORT says (or
+    as the ``uncertain`` argument says): lifted off first, or asked about.
+
+    Args:
+        tasks: The reference agent's tasks: objects and their destination.
+        graph: The scene graph.
+        uncertain: Overrides UNCERTAIN_SUPPORT when given.
+
+    Returns:
+        A reply in the single-call planner's format: a plan with moves, or
+        a question or refusal with a message.
+    """
     moves = []
     try:
         state = SceneState(graph, uncertain or UNCERTAIN_SUPPORT)
@@ -98,71 +197,121 @@ def order_moves(tasks: list, graph: dict, uncertain: str | None = None) -> dict:
         for task in tasks:
             for oid in task["objects"]:
                 if oid in goals and goals[oid] != task["to"]:
-                    raise PlanIssue(f"The request gives multiple destinations for {oid}. Which final destination should I use?",
+                    raise PlanIssue(f"The request gives multiple "
+                                    f"destinations for {oid}. Which final "
+                                    f"destination should I use?",
                                     "ask_user")
+
                 goals[oid] = task["to"]
+
         if not goals:
-            raise PlanIssue("No object was selected. Which object should I move?", "ask_user")
+            raise PlanIssue("No object was selected. Which object should I "
+                            "move?", "ask_user")
+
         if sum(to is None for to in goals.values()) > 1:
-            raise PlanIssue("I can hold only one object at a time. Where should I place the others?", "ask_user")
-        # A sole pick-and-hold goal must be last, independent of the reference agent's list order.
+            raise PlanIssue("I can hold only one object at a time. Where "
+                            "should I place the others?", "ask_user")
+
+        # A sole pick-and-hold goal must be last, independent of the
+        # reference agent's list order.
         requested = sorted(goals, key=lambda oid: goals[oid] is None)
         placed = {}
 
         def move(oid, destination, ancestors=()):
             state.require_pickable(oid)
             if oid in ancestors:
-                raise PlanIssue("The scene has a cycle in its support relations. Please clarify which object is on top.",
-                                "ask_user")
+                raise PlanIssue("The scene has a cycle in its support "
+                                "relations. Please clarify which object is "
+                                "on top.", "ask_user")
+
             state.require_resolved(oid)
             for upper in sorted(state.covers[oid]):
                 parking = state.objects[upper].get("in")
-                if parking not in state.objects or state.objects[parking].get("label") not in ("grey tray", "black tray"):
-                    raise PlanIssue(f"Where can I place {upper} while uncovering {oid}?", "ask_user")
+                if (parking not in state.objects
+                        or state.objects[parking].get("label")
+                        not in ("grey tray", "black tray")):
+                    raise PlanIssue(f"Where can I place {upper} while "
+                                    f"uncovering {oid}?", "ask_user")
+
                 move(upper, parking, (*ancestors, oid))
+
             state.move(oid, destination)
             moves.append({"object": oid, "to": destination})
             placed[oid] = destination
 
         for oid in requested:
             destination = goals[oid]
-            # A blocker parked at its requested destination has already fulfilled that goal.
+            # A blocker parked at its requested destination has already
+            # fulfilled that goal.
             if oid in placed and placed[oid] == destination:
                 continue
+
             move(oid, destination)
-        # A later uncovering step must not silently undo an earlier requested placement.
-        if any(placed.get(oid) != destination for oid, destination in goals.items()):
-            raise PlanIssue("The required moves conflict with a requested final placement. Please clarify the final arrangement.",
-                            "ask_user")
+
+        # A later uncovering step must not silently undo an earlier
+        # requested placement.
+        if any(placed.get(oid) != destination
+               for oid, destination in goals.items()):
+            raise PlanIssue("The required moves conflict with a requested "
+                            "final placement. Please clarify the final "
+                            "arrangement.", "ask_user")
+
     except PlanIssue as exc:
         return {"decision": exc.decision, "moves": [], "message": str(exc)}
+
     return {"decision": "plan", "moves": moves, "message": ""}
 
 
-def check(reply: dict, graph: dict, uncertain: str | None = None) -> str | None:
-    """Return the first plan error. With the "lift" policy a plan is not rejected for what only may be resting
-    on an object: the single-call planner is told about maybe_on in its prompt and decides for itself."""
+def check(reply: dict, graph: dict,
+          uncertain: str | None = None) -> str | None:
+    """Find the first error in a reply.
+
+    With the "lift" policy a plan is not rejected for what only may be
+    resting on an object: the single-call planner is told about maybe_on
+    in its prompt and decides for itself.
+
+    Args:
+        reply: The parsed reply.
+        graph: The scene graph.
+        uncertain: Overrides UNCERTAIN_SUPPORT when given.
+
+    Returns:
+        The first error, worded for Apertus, or None if the reply is valid.
+    """
     if not isinstance(reply, dict):
         return "The answer must be an object."
-    decision, moves, message = reply.get("decision"), reply.get("moves"), reply.get("message")
+
+    decision, moves, message = (reply.get("decision"), reply.get("moves"),
+                                reply.get("message"))
     if not isinstance(moves, list) or not isinstance(message, str):
         return "moves must be a list and message must be a string."
+
     if decision in ("ask_user", "refuse"):
-        return None if message.strip() and not moves else "Questions and refusals need a message and no moves."
+        return (None if message.strip() and not moves
+                else "Questions and refusals need a message and no moves.")
+
     if decision != "plan" or not moves or message.strip():
         return "A plan needs at least one move and an empty message."
+
     try:
         policy = uncertain or UNCERTAIN_SUPPORT
         state = SceneState(graph, "ask" if policy == "ask" else "ignore")
-        for n, move in enumerate(moves, 1):
+        for number, move in enumerate(moves, 1):
             if not isinstance(move, dict) or set(move) != {"object", "to"}:
-                return f"Move {n} needs exactly object and to."
+                return f"Move {number} needs exactly object and to."
+
             oid, destination = move["object"], move["to"]
-            if not isinstance(oid, str) or (destination is not None and not isinstance(destination, str)):
-                return f"Move {n} must use object ids."
+            if not isinstance(oid, str) or (
+                    destination is not None
+                    and not isinstance(destination, str)):
+                return f"Move {number} must use object ids."
+
             state.move(oid, destination)
-            if destination is None and n < len(moves):
-                return f"Move {n}: {oid} is still in the gripper. Put it down before the next move."
+            if destination is None and number < len(moves):
+                return (f"Move {number}: {oid} is still in the gripper. "
+                        f"Put it down before the next move.")
+
     except PlanIssue as exc:
         return str(exc)
+
     return None
