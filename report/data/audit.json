@@ -1,0 +1,1602 @@
+{
+  "summary": {
+    "instructions": 50,
+    "scenes": 10,
+    "grounding_hits": 35.0,
+    "plan_instructions": 40,
+    "nonplan_correct": 9.0,
+    "nonplan_instructions": 10,
+    "plan_answers_on_plan_instructions": 35,
+    "false_nonplan_answers": 5,
+    "wrong_pixels_on_plan_answers": 0,
+    "schema_errors": 0,
+    "request_errors": 0,
+    "truncated_responses": 0,
+    "rejected_planner_attempts": 0,
+    "automatic_score": 54.25,
+    "annotated_targets": 32,
+    "matched_annotated_targets": 31,
+    "raw_center_hits": 24,
+    "corrected_center_hits": 31,
+    "raw_label_errors": 3,
+    "final_label_errors": 0,
+    "median_raw_y_error_px": -100.5,
+    "discarded_proposals": 11,
+    "category_results": {
+      "ambiguous": {
+        "correct": 2.0,
+        "total": 2
+      },
+      "impossible": {
+        "correct": 3.0,
+        "total": 4
+      },
+      "multistep": {
+        "correct": 9.0,
+        "total": 10
+      },
+      "relative": {
+        "correct": 11.0,
+        "total": 14
+      },
+      "simple": {
+        "correct": 15.0,
+        "total": 16
+      },
+      "unsafe": {
+        "correct": 4.0,
+        "total": 4
+      }
+    }
+  },
+  "scenes": [
+    {
+      "scene": "scene_01",
+      "raw_proposals": 4,
+      "accepted_objects": 3,
+      "annotated_targets": 3,
+      "matched_targets": 3,
+      "unmatched_targets": [],
+      "elapsed_seconds": 14.483
+    },
+    {
+      "scene": "scene_02",
+      "raw_proposals": 4,
+      "accepted_objects": 4,
+      "annotated_targets": 2,
+      "matched_targets": 2,
+      "unmatched_targets": [],
+      "elapsed_seconds": 12.132
+    },
+    {
+      "scene": "scene_03",
+      "raw_proposals": 6,
+      "accepted_objects": 4,
+      "annotated_targets": 4,
+      "matched_targets": 4,
+      "unmatched_targets": [],
+      "elapsed_seconds": 15.462
+    },
+    {
+      "scene": "scene_04",
+      "raw_proposals": 6,
+      "accepted_objects": 4,
+      "annotated_targets": 4,
+      "matched_targets": 4,
+      "unmatched_targets": [],
+      "elapsed_seconds": 15.627
+    },
+    {
+      "scene": "scene_05",
+      "raw_proposals": 7,
+      "accepted_objects": 5,
+      "annotated_targets": 3,
+      "matched_targets": 3,
+      "unmatched_targets": [],
+      "elapsed_seconds": 17.339
+    },
+    {
+      "scene": "scene_06",
+      "raw_proposals": 5,
+      "accepted_objects": 5,
+      "annotated_targets": 3,
+      "matched_targets": 3,
+      "unmatched_targets": [],
+      "elapsed_seconds": 14.006
+    },
+    {
+      "scene": "scene_07",
+      "raw_proposals": 4,
+      "accepted_objects": 4,
+      "annotated_targets": 3,
+      "matched_targets": 3,
+      "unmatched_targets": [],
+      "elapsed_seconds": 12.935
+    },
+    {
+      "scene": "scene_08",
+      "raw_proposals": 7,
+      "accepted_objects": 5,
+      "annotated_targets": 3,
+      "matched_targets": 2,
+      "unmatched_targets": [
+        "small_part"
+      ],
+      "elapsed_seconds": 17.506
+    },
+    {
+      "scene": "scene_09",
+      "raw_proposals": 8,
+      "accepted_objects": 8,
+      "annotated_targets": 3,
+      "matched_targets": 3,
+      "unmatched_targets": [],
+      "elapsed_seconds": 20.16
+    },
+    {
+      "scene": "scene_10",
+      "raw_proposals": 10,
+      "accepted_objects": 8,
+      "annotated_targets": 4,
+      "matched_targets": 4,
+      "unmatched_targets": [],
+      "elapsed_seconds": 20.433
+    }
+  ],
+  "failures": [
+    {
+      "instruction_id": "scene_08_i1",
+      "category": "relative",
+      "instruction": "pick up the gear in the grey tray",
+      "expected": "plan",
+      "answer": "refuse",
+      "error": null,
+      "plan": "refuse: There is no gear in the grey tray; only a yellow gear is in the grey tray.",
+      "reference_plan": "pick(yellow_gear)  [the red gears are in the black tray]",
+      "score": 0.0
+    },
+    {
+      "instruction_id": "scene_08_i2",
+      "category": "simple",
+      "instruction": "put the small white part on the plate",
+      "expected": "plan",
+      "answer": "refuse",
+      "error": null,
+      "plan": "refuse: There is no small white part on the table.",
+      "reference_plan": "pick(small_part), place(plate)",
+      "score": 0.0
+    },
+    {
+      "instruction_id": "scene_09_i3",
+      "category": "relative",
+      "instruction": "pick up the object lying on the grey part",
+      "expected": "plan",
+      "answer": "ask_user",
+      "error": null,
+      "plan": "ask_user: Which object is lying on the grey part?",
+      "reference_plan": "pick(red_cube)",
+      "score": 0.0
+    },
+    {
+      "instruction_id": "scene_09_i4",
+      "category": "multistep",
+      "instruction": "put the grey part under the red cube on the plate",
+      "expected": "plan",
+      "answer": "refuse",
+      "error": null,
+      "plan": "refuse: There is no object called 'grey part' on the table.",
+      "reference_plan": "pick(red_cube), place aside, then pick(grey_part), place(plate)",
+      "score": 0.0
+    },
+    {
+      "instruction_id": "scene_09_i5",
+      "category": "impossible",
+      "instruction": "put the mandarin on the plate and leave it where it is",
+      "expected": "refuse",
+      "answer": "plan",
+      "error": null,
+      "plan": "pick(mandarin), place(plate)",
+      "reference_plan": "",
+      "score": 0.0
+    },
+    {
+      "instruction_id": "scene_10_i3",
+      "category": "relative",
+      "instruction": "pick up the red gear closest to the mandarin",
+      "expected": "plan",
+      "answer": "ask_user",
+      "error": null,
+      "plan": "ask_user: Which red gear do you mean, the left one (red_gear_1) or the right one (red_gear_2)?",
+      "reference_plan": "pick(red_gear_1)",
+      "score": 0.0
+    }
+  ],
+  "annotated_detection_audit": [
+    {
+      "scene": "scene_01",
+      "ground_truth": "mug",
+      "gt_box": [
+        639,
+        325,
+        1116,
+        724
+      ],
+      "raw_kind": "mug",
+      "raw_box": [
+        636.48,
+        294.912,
+        1126.08,
+        634.88
+      ],
+      "box": [
+        636.48,
+        354.08128,
+        1126.08,
+        716.1472
+      ],
+      "raw_center": [
+        881,
+        465
+      ],
+      "corrected_center": [
+        881,
+        535
+      ],
+      "final_kind": "mug",
+      "bbox_iou": 0.886,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "mug",
+      "corrected_center_on": "mug",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -59.6
+    },
+    {
+      "scene": "scene_01",
+      "ground_truth": "red_cube",
+      "gt_box": [
+        145,
+        870,
+        555,
+        1263
+      ],
+      "raw_kind": "red cube",
+      "raw_box": [
+        171.36,
+        757.76,
+        553.248,
+        1138.688
+      ],
+      "box": [
+        171.36,
+        847.0143999999999,
+        553.248,
+        1252.70272
+      ],
+      "raw_center": [
+        362,
+        948
+      ],
+      "corrected_center": [
+        362,
+        1050
+      ],
+      "final_kind": "red cube",
+      "bbox_iou": 0.86,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "red_cube",
+      "corrected_center_on": "red_cube",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -118.3
+    },
+    {
+      "scene": "scene_01",
+      "ground_truth": "yellow_gear",
+      "gt_box": [
+        715,
+        797,
+        894,
+        978
+      ],
+      "raw_kind": "yellow gear",
+      "raw_box": [
+        729.504,
+        688.128,
+        942.48,
+        909.312
+      ],
+      "box": [
+        729.504,
+        772.85632,
+        942.48,
+        1008.4172799999999
+      ],
+      "raw_center": [
+        836,
+        799
+      ],
+      "corrected_center": [
+        836,
+        890
+      ],
+      "final_kind": "yellow gear",
+      "bbox_iou": 0.564,
+      "raw_center_hit": false,
+      "corrected_center_hit": true,
+      "raw_center_on": "background",
+      "corrected_center_on": "yellow_gear",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -88.8
+    },
+    {
+      "scene": "scene_02",
+      "ground_truth": "red_cube",
+      "gt_box": [
+        1484,
+        246,
+        1885,
+        672
+      ],
+      "raw_kind": "red cube",
+      "raw_box": [
+        1488.384,
+        233.472,
+        1897.2,
+        593.92
+      ],
+      "box": [
+        1488.384,
+        288.64768,
+        1897.2,
+        672.5247999999999
+      ],
+      "raw_center": [
+        1693,
+        414
+      ],
+      "corrected_center": [
+        1692,
+        481
+      ],
+      "final_kind": "red cube",
+      "bbox_iou": 0.865,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "red_cube",
+      "corrected_center_on": "red_cube",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -45.3
+    },
+    {
+      "scene": "scene_02",
+      "ground_truth": "mandarin",
+      "gt_box": [
+        2016,
+        778,
+        2312,
+        1071
+      ],
+      "raw_kind": "mandarin",
+      "raw_box": [
+        2007.36,
+        667.648,
+        2320.704,
+        974.848
+      ],
+      "box": [
+        2007.36,
+        751.04512,
+        2320.704,
+        1078.21312
+      ],
+      "raw_center": [
+        2164,
+        821
+      ],
+      "corrected_center": [
+        2164,
+        914
+      ],
+      "final_kind": "mandarin",
+      "bbox_iou": 0.846,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "mandarin",
+      "corrected_center_on": "mandarin",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -103.3
+    },
+    {
+      "scene": "scene_03",
+      "ground_truth": "yellow_gear",
+      "gt_box": [
+        1767,
+        1006,
+        1964,
+        1194
+      ],
+      "raw_kind": "yellow gear",
+      "raw_box": [
+        1762.56,
+        901.12,
+        1958.4,
+        1091.584
+      ],
+      "box": [
+        1762.56,
+        999.6927999999999,
+        1958.4,
+        1202.53696
+      ],
+      "raw_center": [
+        1860,
+        996
+      ],
+      "corrected_center": [
+        1860,
+        1101
+      ],
+      "final_kind": "yellow gear",
+      "bbox_iou": 0.882,
+      "raw_center_hit": false,
+      "corrected_center_hit": true,
+      "raw_center_on": "background",
+      "corrected_center_on": "yellow_gear",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -103.6
+    },
+    {
+      "scene": "scene_03",
+      "ground_truth": "red_gear_3",
+      "gt_box": [
+        2078,
+        615,
+        2436,
+        966
+      ],
+      "raw_kind": "red gear",
+      "raw_box": [
+        2105.28,
+        536.576,
+        2433.312,
+        897.024
+      ],
+      "box": [
+        2105.28,
+        611.45344,
+        2433.312,
+        995.33056
+      ],
+      "raw_center": [
+        2269,
+        717
+      ],
+      "corrected_center": [
+        2269,
+        803
+      ],
+      "final_kind": "red gear",
+      "bbox_iou": 0.844,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "red_gear_3",
+      "corrected_center_on": "red_gear_3",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -73.7
+    },
+    {
+      "scene": "scene_03",
+      "ground_truth": "red_gear_1",
+      "gt_box": [
+        1349,
+        600,
+        1706,
+        950
+      ],
+      "raw_kind": "red gear",
+      "raw_box": [
+        1361.088,
+        528.384,
+        1762.56,
+        872.448
+      ],
+      "box": [
+        1361.088,
+        602.7289599999999,
+        1762.56,
+        969.15712
+      ],
+      "raw_center": [
+        1562,
+        700
+      ],
+      "corrected_center": [
+        1562,
+        786
+      ],
+      "final_kind": "red gear",
+      "bbox_iou": 0.787,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "red_gear_1",
+      "corrected_center_on": "red_gear_1",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -74.6
+    },
+    {
+      "scene": "scene_03",
+      "ground_truth": "red_gear_2",
+      "gt_box": [
+        1713,
+        609,
+        2070,
+        963
+      ],
+      "raw_kind": "red gear",
+      "raw_box": [
+        1745.424,
+        532.48,
+        2142.0,
+        886.784
+      ],
+      "box": [
+        1745.424,
+        607.0912,
+        2142.0,
+        984.4249599999999
+      ],
+      "raw_center": [
+        1944,
+        710
+      ],
+      "corrected_center": [
+        1943,
+        795
+      ],
+      "final_kind": "red gear",
+      "bbox_iou": 0.713,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "red_gear_2",
+      "corrected_center_on": "red_gear_2",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -76.4
+    },
+    {
+      "scene": "scene_04",
+      "ground_truth": "white_part",
+      "gt_box": [
+        1359,
+        837,
+        2012,
+        1436
+      ],
+      "raw_kind": "small white part",
+      "raw_box": [
+        1361.088,
+        729.088,
+        2066.112,
+        1302.528
+      ],
+      "box": [
+        1361.088,
+        816.47872,
+        2066.112,
+        1427.1923199999999
+      ],
+      "raw_center": [
+        1714,
+        1016
+      ],
+      "corrected_center": [
+        1713,
+        1121
+      ],
+      "final_kind": "white part",
+      "bbox_iou": 0.878,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "white_part",
+      "corrected_center_on": "white_part",
+      "raw_label_correct": false,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -120.7
+    },
+    {
+      "scene": "scene_04",
+      "ground_truth": "grey_part_2",
+      "gt_box": [
+        2010,
+        359,
+        2240,
+        866
+      ],
+      "raw_kind": "small white part",
+      "raw_box": [
+        2017.152,
+        319.488,
+        2252.16,
+        770.048
+      ],
+      "box": [
+        2017.152,
+        380.25471999999996,
+        2252.16,
+        860.10112
+      ],
+      "raw_center": [
+        2135,
+        545
+      ],
+      "corrected_center": [
+        2134,
+        620
+      ],
+      "final_kind": "grey part",
+      "bbox_iou": 0.873,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "grey_part_2",
+      "corrected_center_on": "grey_part_2",
+      "raw_label_correct": false,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -67.7
+    },
+    {
+      "scene": "scene_04",
+      "ground_truth": "mug",
+      "gt_box": [
+        1903,
+        1205,
+        2344,
+        1634
+      ],
+      "raw_kind": "mug",
+      "raw_box": [
+        1958.4,
+        1097.728,
+        2359.872,
+        1523.712
+      ],
+      "box": [
+        1958.4,
+        1209.0803199999998,
+        2359.872,
+        1662.7532800000001
+      ],
+      "raw_center": [
+        2159,
+        1311
+      ],
+      "corrected_center": [
+        2159,
+        1436
+      ],
+      "final_kind": "mug",
+      "bbox_iou": 0.79,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "mug",
+      "corrected_center_on": "mug",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -108.8
+    },
+    {
+      "scene": "scene_04",
+      "ground_truth": "grey_part_1",
+      "gt_box": [
+        1425,
+        301,
+        1938,
+        555
+      ],
+      "raw_kind": "small white part",
+      "raw_box": [
+        1429.632,
+        278.528,
+        2022.048,
+        524.288
+      ],
+      "box": [
+        1429.632,
+        336.63232,
+        2022.048,
+        598.36672
+      ],
+      "raw_center": [
+        1726,
+        401
+      ],
+      "corrected_center": [
+        1726,
+        467
+      ],
+      "final_kind": "grey part",
+      "bbox_iou": 0.637,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "grey_part_1",
+      "corrected_center_on": "grey_part_1",
+      "raw_label_correct": false,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -26.6
+    },
+    {
+      "scene": "scene_05",
+      "ground_truth": "banana",
+      "gt_box": [
+        1462,
+        870,
+        1830,
+        1766
+      ],
+      "raw_kind": "banana",
+      "raw_box": [
+        1444.32,
+        757.76,
+        1826.208,
+        1628.16
+      ],
+      "box": [
+        1444.32,
+        847.0143999999999,
+        1826.208,
+        1773.9904
+      ],
+      "raw_center": [
+        1635,
+        1193
+      ],
+      "corrected_center": [
+        1635,
+        1310
+      ],
+      "final_kind": "banana",
+      "bbox_iou": 0.913,
+      "raw_center_hit": false,
+      "corrected_center_hit": true,
+      "raw_center_on": "background",
+      "corrected_center_on": "banana",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -125.0
+    },
+    {
+      "scene": "scene_05",
+      "ground_truth": "mug",
+      "gt_box": [
+        1429,
+        341,
+        1807,
+        804
+      ],
+      "raw_kind": "mug",
+      "raw_box": [
+        1444.32,
+        307.2,
+        1826.208,
+        716.8
+      ],
+      "box": [
+        1444.32,
+        367.168,
+        1826.208,
+        803.392
+      ],
+      "raw_center": [
+        1635,
+        512
+      ],
+      "corrected_center": [
+        1635,
+        585
+      ],
+      "final_kind": "mug",
+      "bbox_iou": 0.863,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "mug",
+      "corrected_center_on": "mug",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -60.5
+    },
+    {
+      "scene": "scene_05",
+      "ground_truth": "mandarin",
+      "gt_box": [
+        1973,
+        593,
+        2273,
+        885
+      ],
+      "raw_kind": "mandarin",
+      "raw_box": [
+        1970.64,
+        512.0,
+        2288.88,
+        819.2
+      ],
+      "box": [
+        1970.64,
+        585.28,
+        2288.88,
+        912.448
+      ],
+      "raw_center": [
+        2130,
+        666
+      ],
+      "corrected_center": [
+        2130,
+        748
+      ],
+      "final_kind": "mandarin",
+      "bbox_iou": 0.841,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "mandarin",
+      "corrected_center_on": "mandarin",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -73.4
+    },
+    {
+      "scene": "scene_06",
+      "ground_truth": "red_cube",
+      "gt_box": [
+        1739,
+        1204,
+        2064,
+        1524
+      ],
+      "raw_kind": "red cube",
+      "raw_box": [
+        1713.6,
+        1064.96,
+        2080.8,
+        1372.16
+      ],
+      "box": [
+        1713.6,
+        1174.1824,
+        2080.8,
+        1501.3503999999998
+      ],
+      "raw_center": [
+        1897,
+        1219
+      ],
+      "corrected_center": [
+        1897,
+        1337
+      ],
+      "final_kind": "red cube",
+      "bbox_iou": 0.758,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "red_cube",
+      "corrected_center_on": "red_cube",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -145.4
+    },
+    {
+      "scene": "scene_06",
+      "ground_truth": "red_gear_1",
+      "gt_box": [
+        1378,
+        826,
+        1737,
+        1181
+      ],
+      "raw_kind": "red gear",
+      "raw_box": [
+        1346.4,
+        696.32,
+        1762.56,
+        1064.96
+      ],
+      "box": [
+        1346.4,
+        781.5808,
+        1762.56,
+        1174.1824
+      ],
+      "raw_center": [
+        1554,
+        881
+      ],
+      "corrected_center": [
+        1554,
+        978
+      ],
+      "final_kind": "red gear",
+      "bbox_iou": 0.754,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "red_gear_1",
+      "corrected_center_on": "red_gear_1",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -122.9
+    },
+    {
+      "scene": "scene_06",
+      "ground_truth": "yellow_gear",
+      "gt_box": [
+        1643,
+        615,
+        1841,
+        818
+      ],
+      "raw_kind": "yellow gear",
+      "raw_box": [
+        1615.68,
+        512.0,
+        1836.0,
+        737.28
+      ],
+      "box": [
+        1615.68,
+        585.28,
+        1836.0,
+        825.2031999999999
+      ],
+      "raw_center": [
+        1726,
+        625
+      ],
+      "corrected_center": [
+        1726,
+        705
+      ],
+      "final_kind": "yellow gear",
+      "bbox_iou": 0.727,
+      "raw_center_hit": false,
+      "corrected_center_hit": true,
+      "raw_center_on": "background",
+      "corrected_center_on": "yellow_gear",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -91.9
+    },
+    {
+      "scene": "scene_07",
+      "ground_truth": "mug",
+      "gt_box": [
+        394,
+        516,
+        880,
+        902
+      ],
+      "raw_kind": "mug",
+      "raw_box": [
+        401.472,
+        462.848,
+        881.28,
+        831.488
+      ],
+      "box": [
+        401.472,
+        532.9331199999999,
+        881.28,
+        925.53472
+      ],
+      "raw_center": [
+        641,
+        647
+      ],
+      "corrected_center": [
+        641,
+        729
+      ],
+      "final_kind": "mug",
+      "bbox_iou": 0.886,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "mug",
+      "corrected_center_on": "mug",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -61.8
+    },
+    {
+      "scene": "scene_07",
+      "ground_truth": "red_cube",
+      "gt_box": [
+        265,
+        1026,
+        697,
+        1441
+      ],
+      "raw_kind": "red cube",
+      "raw_box": [
+        261.936,
+        907.264,
+        709.92,
+        1298.432
+      ],
+      "box": [
+        261.936,
+        1006.2361599999999,
+        709.92,
+        1422.83008
+      ],
+      "raw_center": [
+        486,
+        1103
+      ],
+      "corrected_center": [
+        486,
+        1214
+      ],
+      "final_kind": "red cube",
+      "bbox_iou": 0.881,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "red_cube",
+      "corrected_center_on": "red_cube",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -130.7
+    },
+    {
+      "scene": "scene_07",
+      "ground_truth": "yellow_gear",
+      "gt_box": [
+        759,
+        1307,
+        957,
+        1507
+      ],
+      "raw_kind": "yellow gear",
+      "raw_box": [
+        776.016,
+        1196.032,
+        1003.68,
+        1396.736
+      ],
+      "box": [
+        776.016,
+        1313.77408,
+        1003.68,
+        1527.5238399999998
+      ],
+      "raw_center": [
+        890,
+        1296
+      ],
+      "corrected_center": [
+        890,
+        1421
+      ],
+      "final_kind": "yellow gear",
+      "bbox_iou": 0.656,
+      "raw_center_hit": false,
+      "corrected_center_hit": true,
+      "raw_center_on": "background",
+      "corrected_center_on": "yellow_gear",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -110.6
+    },
+    {
+      "scene": "scene_08",
+      "ground_truth": "yellow_gear",
+      "gt_box": [
+        759,
+        1307,
+        957,
+        1507
+      ],
+      "raw_kind": "yellow gear",
+      "raw_box": [
+        758.88,
+        1187.84,
+        979.2,
+        1382.4
+      ],
+      "box": [
+        758.88,
+        1305.0495999999998,
+        979.2,
+        1512.256
+      ],
+      "raw_center": [
+        869,
+        1285
+      ],
+      "corrected_center": [
+        869,
+        1408
+      ],
+      "final_kind": "yellow gear",
+      "bbox_iou": 0.867,
+      "raw_center_hit": false,
+      "corrected_center_hit": true,
+      "raw_center_on": "background",
+      "corrected_center_on": "yellow_gear",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -121.9
+    },
+    {
+      "scene": "scene_08",
+      "ground_truth": "red_cube",
+      "gt_box": [
+        1644,
+        343,
+        1996,
+        733
+      ],
+      "raw_kind": "red cube",
+      "raw_box": [
+        1488.384,
+        313.344,
+        1975.536,
+        655.36
+      ],
+      "box": [
+        1488.384,
+        373.71136,
+        1975.536,
+        737.9583999999999
+      ],
+      "raw_center": [
+        1732,
+        484
+      ],
+      "corrected_center": [
+        1732,
+        556
+      ],
+      "final_kind": "red cube",
+      "bbox_iou": 0.609,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "red_cube",
+      "corrected_center_on": "red_cube",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -53.6
+    },
+    {
+      "scene": "scene_09",
+      "ground_truth": "mandarin",
+      "gt_box": [
+        485,
+        1212,
+        768,
+        1504
+      ],
+      "raw_kind": "mandarin",
+      "raw_box": [
+        496.944,
+        1091.584,
+        790.704,
+        1372.16
+      ],
+      "box": [
+        496.944,
+        1202.53696,
+        790.704,
+        1501.3503999999998
+      ],
+      "raw_center": [
+        644,
+        1232
+      ],
+      "corrected_center": [
+        644,
+        1352
+      ],
+      "final_kind": "mandarin",
+      "bbox_iou": 0.853,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "mandarin",
+      "corrected_center_on": "mandarin",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -126.1
+    },
+    {
+      "scene": "scene_09",
+      "ground_truth": "red_gear_2",
+      "gt_box": [
+        134,
+        1363,
+        511,
+        1730
+      ],
+      "raw_kind": "red gear",
+      "raw_box": [
+        105.264,
+        1214.464,
+        509.184,
+        1617.92
+      ],
+      "box": [
+        105.264,
+        1333.4041599999998,
+        509.184,
+        1763.0847999999999
+      ],
+      "raw_center": [
+        307,
+        1416
+      ],
+      "corrected_center": [
+        307,
+        1548
+      ],
+      "final_kind": "red gear",
+      "bbox_iou": 0.79,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "red_gear_2",
+      "corrected_center_on": "red_gear_2",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -130.3
+    },
+    {
+      "scene": "scene_09",
+      "ground_truth": "red_cube",
+      "gt_box": [
+        746,
+        652,
+        1172,
+        1090
+      ],
+      "raw_kind": "red cube",
+      "raw_box": [
+        753.984,
+        565.248,
+        1224.0,
+        1024.0
+      ],
+      "box": [
+        753.984,
+        641.98912,
+        1224.0,
+        1130.56
+      ],
+      "raw_center": [
+        989,
+        795
+      ],
+      "corrected_center": [
+        989,
+        886
+      ],
+      "final_kind": "red cube",
+      "bbox_iou": 0.785,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "red_cube",
+      "corrected_center_on": "red_cube",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -76.4
+    },
+    {
+      "scene": "scene_10",
+      "ground_truth": "mandarin",
+      "gt_box": [
+        316,
+        1257,
+        622,
+        1561
+      ],
+      "raw_kind": "mandarin",
+      "raw_box": [
+        320.688,
+        1120.256,
+        646.272,
+        1427.456
+      ],
+      "box": [
+        320.688,
+        1233.0726399999999,
+        646.272,
+        1560.24064
+      ],
+      "raw_center": [
+        483,
+        1274
+      ],
+      "corrected_center": [
+        483,
+        1396
+      ],
+      "final_kind": "mandarin",
+      "bbox_iou": 0.845,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "mandarin",
+      "corrected_center_on": "mandarin",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -135.1
+    },
+    {
+      "scene": "scene_10",
+      "ground_truth": "red_gear_2",
+      "gt_box": [
+        605,
+        987,
+        974,
+        1350
+      ],
+      "raw_kind": "red gear",
+      "raw_box": [
+        621.792,
+        880.64,
+        1003.68,
+        1255.424
+      ],
+      "box": [
+        621.792,
+        977.8815999999999,
+        1003.68,
+        1377.0265599999998
+      ],
+      "raw_center": [
+        813,
+        1068
+      ],
+      "corrected_center": [
+        813,
+        1177
+      ],
+      "final_kind": "red gear",
+      "bbox_iou": 0.807,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "red_gear_2",
+      "corrected_center_on": "red_gear_2",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -100.5
+    },
+    {
+      "scene": "scene_10",
+      "ground_truth": "red_gear_1",
+      "gt_box": [
+        152,
+        855,
+        520,
+        1216
+      ],
+      "raw_kind": "red gear",
+      "raw_box": [
+        217.872,
+        765.952,
+        570.384,
+        1132.544
+      ],
+      "box": [
+        217.872,
+        855.73888,
+        570.384,
+        1246.1593599999999
+      ],
+      "raw_center": [
+        394,
+        949
+      ],
+      "corrected_center": [
+        394,
+        1051
+      ],
+      "final_kind": "red gear",
+      "bbox_iou": 0.673,
+      "raw_center_hit": true,
+      "corrected_center_hit": true,
+      "raw_center_on": "red_gear_1",
+      "corrected_center_on": "red_gear_1",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -86.3
+    },
+    {
+      "scene": "scene_10",
+      "ground_truth": "yellow_gear",
+      "gt_box": [
+        731,
+        1382,
+        937,
+        1574
+      ],
+      "raw_kind": "yellow gear",
+      "raw_box": [
+        746.64,
+        1222.656,
+        964.512,
+        1468.416
+      ],
+      "box": [
+        746.64,
+        1342.12864,
+        964.512,
+        1603.86304
+      ],
+      "raw_center": [
+        856,
+        1346
+      ],
+      "corrected_center": [
+        856,
+        1473
+      ],
+      "final_kind": "yellow gear",
+      "bbox_iou": 0.609,
+      "raw_center_hit": false,
+      "corrected_center_hit": true,
+      "raw_center_on": "background",
+      "corrected_center_on": "yellow_gear",
+      "raw_label_correct": true,
+      "final_label_correct": true,
+      "raw_y_center_error_px": -132.5
+    }
+  ],
+  "discarded_proposals": [
+    {
+      "scene": "scene_01",
+      "proposal_index": 3,
+      "reason": "tray-sized box",
+      "description": "Grey part",
+      "kind": "grey part",
+      "bounding_box": [
+        0,
+        36,
+        526,
+        836
+      ]
+    },
+    {
+      "scene": "scene_03",
+      "proposal_index": 4,
+      "reason": "tray-sized box",
+      "description": "Grey part",
+      "kind": "grey part",
+      "bounding_box": [
+        0,
+        0,
+        534,
+        840
+      ]
+    },
+    {
+      "scene": "scene_03",
+      "proposal_index": 5,
+      "reason": "kind not allowed",
+      "description": "Black part",
+      "kind": "black part",
+      "bounding_box": [
+        526,
+        0,
+        998,
+        840
+      ]
+    },
+    {
+      "scene": "scene_04",
+      "proposal_index": 0,
+      "reason": "tray-sized box",
+      "description": "Grey tray",
+      "kind": "grey part",
+      "bounding_box": [
+        0,
+        0,
+        526,
+        878
+      ]
+    },
+    {
+      "scene": "scene_04",
+      "proposal_index": 1,
+      "reason": "tray-sized box",
+      "description": "Black tray",
+      "kind": "grey part",
+      "bounding_box": [
+        508,
+        0,
+        1000,
+        878
+      ]
+    },
+    {
+      "scene": "scene_05",
+      "proposal_index": 5,
+      "reason": "tray-sized box",
+      "description": "A grey part of the robot table",
+      "kind": "grey part",
+      "bounding_box": [
+        0,
+        0,
+        530,
+        840
+      ]
+    },
+    {
+      "scene": "scene_05",
+      "proposal_index": 6,
+      "reason": "photo-edge box",
+      "description": "A small white part of the robot table",
+      "kind": "small white part",
+      "bounding_box": [
+        355,
+        840,
+        475,
+        1000
+      ]
+    },
+    {
+      "scene": "scene_08",
+      "proposal_index": 5,
+      "reason": "tray-sized box",
+      "description": "Grey tray",
+      "kind": "grey part",
+      "bounding_box": [
+        0,
+        30,
+        530,
+        830
+      ]
+    },
+    {
+      "scene": "scene_08",
+      "proposal_index": 6,
+      "reason": "kind not allowed",
+      "description": "Black tray",
+      "kind": "black part",
+      "bounding_box": [
+        525,
+        0,
+        1000,
+        870
+      ]
+    },
+    {
+      "scene": "scene_10",
+      "proposal_index": 7,
+      "reason": "tray-sized box",
+      "description": "Grey part",
+      "kind": "grey part",
+      "bounding_box": [
+        0,
+        0,
+        524,
+        836
+      ]
+    },
+    {
+      "scene": "scene_10",
+      "proposal_index": 8,
+      "reason": "tray-sized box",
+      "description": "White part",
+      "kind": "white part",
+      "bounding_box": [
+        524,
+        0,
+        1000,
+        1000
+      ]
+    }
+  ],
+  "rejected_planner_attempts": []
+}

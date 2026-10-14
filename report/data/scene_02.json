@@ -1,0 +1,327 @@
+{
+  "scene": "scene_02",
+  "elapsed_seconds": 12.132,
+  "measured_objects": [
+    {
+      "id": 1,
+      "kind": "red cube",
+      "box": [
+        1488,
+        289,
+        1897,
+        673
+      ],
+      "pixel": [
+        1692,
+        481
+      ],
+      "colour": "red",
+      "width_mm": 97,
+      "gaps": {
+        "2": 6.4,
+        "3": 3.4,
+        "4": 1.6
+      },
+      "on": []
+    },
+    {
+      "id": 2,
+      "kind": "plate",
+      "box": [
+        1395,
+        926,
+        2179,
+        1733
+      ],
+      "pixel": [
+        1787,
+        1329
+      ],
+      "colour": "grey",
+      "width_mm": 192,
+      "gaps": {
+        "1": 6.4,
+        "3": 0.0,
+        "4": 8.0
+      },
+      "on": []
+    },
+    {
+      "id": 3,
+      "kind": "mandarin",
+      "box": [
+        2007,
+        751,
+        2321,
+        1078
+      ],
+      "pixel": [
+        2164,
+        914
+      ],
+      "colour": "orange",
+      "width_mm": 78,
+      "gaps": {
+        "1": 3.4,
+        "2": 0.0,
+        "4": 3.6
+      },
+      "on": []
+    },
+    {
+      "id": 4,
+      "kind": "mug",
+      "box": [
+        1958,
+        210,
+        2424,
+        607
+      ],
+      "pixel": [
+        2191,
+        408
+      ],
+      "colour": "green",
+      "width_mm": 101,
+      "gaps": {
+        "1": 1.5,
+        "2": 8.0,
+        "3": 3.6
+      },
+      "on": []
+    }
+  ],
+  "graph": {
+    "hand_present": false,
+    "left_to_right": [
+      "red_cube",
+      "plate",
+      "mandarin",
+      "mug"
+    ],
+    "top_to_bottom": [
+      "mug",
+      "red_cube",
+      "mandarin",
+      "plate"
+    ],
+    "objects": [
+      {
+        "id": "red_cube",
+        "type": "red cube",
+        "colour": "red",
+        "pixel": [
+          1692,
+          481
+        ],
+        "size_mm": 97,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "mug",
+            16
+          ],
+          [
+            "mandarin",
+            34
+          ],
+          [
+            "plate",
+            64
+          ]
+        ]
+      },
+      {
+        "id": "plate",
+        "type": "plate",
+        "colour": "grey",
+        "pixel": [
+          1787,
+          1329
+        ],
+        "size_mm": 192,
+        "pickable": false,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "mandarin"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "mandarin",
+            0
+          ],
+          [
+            "red_cube",
+            64
+          ],
+          [
+            "mug",
+            80
+          ]
+        ]
+      },
+      {
+        "id": "mandarin",
+        "type": "mandarin",
+        "colour": "orange",
+        "pixel": [
+          2164,
+          914
+        ],
+        "size_mm": 78,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "plate"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "plate",
+            0
+          ],
+          [
+            "red_cube",
+            34
+          ],
+          [
+            "mug",
+            36
+          ]
+        ]
+      },
+      {
+        "id": "mug",
+        "type": "mug",
+        "colour": "green",
+        "pixel": [
+          2191,
+          408
+        ],
+        "size_mm": 101,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_cube",
+            15
+          ],
+          [
+            "mandarin",
+            36
+          ],
+          [
+            "plate",
+            80
+          ]
+        ]
+      },
+      {
+        "id": "grey_tray",
+        "type": "grey tray",
+        "pickable": false,
+        "note": "the plastic tray on the left; a place to put things"
+      },
+      {
+        "id": "black_tray",
+        "type": "black tray",
+        "pickable": false,
+        "note": "the black mat on the right; a place to put things"
+      }
+    ]
+  },
+  "results": [
+    {
+      "instruction_id": "scene_02_i1",
+      "target_pixel": [
+        2164,
+        914
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "mandarin"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_02_i2",
+      "target_pixel": [
+        1692,
+        481
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "red_cube"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_02_i3",
+      "target_pixel": [
+        1692,
+        481
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "red_cube"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_02_i4",
+      "target_pixel": [
+        2164,
+        914
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "mandarin"
+        },
+        {
+          "action": "place",
+          "object": "plate"
+        },
+        {
+          "action": "pick",
+          "object": "red_cube"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_02_i5",
+      "target_pixel": null,
+      "actions": [
+        {
+          "action": "refuse",
+          "reason": "The instruction asks to put a plate into a mug, which contradicts itself because a plate cannot fit inside a mug."
+        }
+      ]
+    }
+  ]
+}

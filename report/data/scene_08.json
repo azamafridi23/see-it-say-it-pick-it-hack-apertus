@@ -1,0 +1,410 @@
+{
+  "scene": "scene_08",
+  "elapsed_seconds": 17.506,
+  "measured_objects": [
+    {
+      "id": 1,
+      "kind": "yellow gear",
+      "box": [
+        759,
+        1305,
+        979,
+        1512
+      ],
+      "pixel": [
+        869,
+        1408
+      ],
+      "colour": "yellow",
+      "width_mm": 50,
+      "gaps": {
+        "2": 15.9,
+        "3": 18.7,
+        "4": 12.0,
+        "5": 26.8
+      },
+      "on": []
+    },
+    {
+      "id": 2,
+      "kind": "red gear",
+      "box": [
+        1376,
+        411,
+        1699,
+        792
+      ],
+      "pixel": [
+        1537,
+        601
+      ],
+      "colour": "red",
+      "width_mm": 81,
+      "gaps": {
+        "1": 16.2,
+        "3": 0.0,
+        "4": 3.0,
+        "5": 6.3
+      },
+      "on": []
+    },
+    {
+      "id": 3,
+      "kind": "red cube",
+      "box": [
+        1488,
+        374,
+        1976,
+        738
+      ],
+      "pixel": [
+        1732,
+        556
+      ],
+      "colour": "red",
+      "width_mm": 92,
+      "gaps": {
+        "1": 19.1,
+        "2": 0.0,
+        "4": 4.4,
+        "5": 0.0
+      },
+      "on": [
+        2
+      ]
+    },
+    {
+      "id": 4,
+      "kind": "plate",
+      "box": [
+        1469,
+        912,
+        2264,
+        1709
+      ],
+      "pixel": [
+        1866,
+        1310
+      ],
+      "colour": "grey",
+      "width_mm": 195,
+      "gaps": {
+        "1": 12.0,
+        "2": 3.0,
+        "3": 4.4,
+        "5": 3.0
+      },
+      "on": []
+    },
+    {
+      "id": 5,
+      "kind": "red gear",
+      "box": [
+        1946,
+        411,
+        2211,
+        792
+      ],
+      "pixel": [
+        2078,
+        601
+      ],
+      "colour": "red",
+      "width_mm": 67,
+      "gaps": {
+        "1": 27.4,
+        "2": 6.3,
+        "3": 0.0,
+        "4": 3.0
+      },
+      "on": []
+    }
+  ],
+  "graph": {
+    "hand_present": false,
+    "left_to_right": [
+      "yellow_gear",
+      "red_gear_1",
+      "red_cube",
+      "plate",
+      "red_gear_2"
+    ],
+    "top_to_bottom": [
+      "red_cube",
+      "red_gear_1",
+      "red_gear_2",
+      "plate",
+      "yellow_gear"
+    ],
+    "objects": [
+      {
+        "id": "yellow_gear",
+        "type": "yellow gear",
+        "colour": "yellow",
+        "pixel": [
+          869,
+          1408
+        ],
+        "size_mm": 50,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "plate",
+            120
+          ],
+          [
+            "red_gear_1",
+            159
+          ],
+          [
+            "red_cube",
+            187
+          ],
+          [
+            "red_gear_2",
+            268
+          ]
+        ]
+      },
+      {
+        "id": "red_gear_1",
+        "type": "red gear",
+        "colour": "red",
+        "pixel": [
+          1537,
+          601
+        ],
+        "size_mm": 81,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [
+          "red_cube"
+        ],
+        "touching": [],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_cube",
+            0
+          ],
+          [
+            "plate",
+            30
+          ],
+          [
+            "red_gear_2",
+            63
+          ],
+          [
+            "yellow_gear",
+            162
+          ]
+        ]
+      },
+      {
+        "id": "red_cube",
+        "type": "red cube",
+        "colour": "red",
+        "pixel": [
+          1732,
+          556
+        ],
+        "size_mm": 92,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [
+          "red_gear_1"
+        ],
+        "covered_by": [],
+        "touching": [
+          "red_gear_2"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_gear_1",
+            0
+          ],
+          [
+            "red_gear_2",
+            0
+          ],
+          [
+            "plate",
+            44
+          ],
+          [
+            "yellow_gear",
+            191
+          ]
+        ]
+      },
+      {
+        "id": "plate",
+        "type": "plate",
+        "colour": "grey",
+        "pixel": [
+          1866,
+          1310
+        ],
+        "size_mm": 195,
+        "pickable": false,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_gear_1",
+            30
+          ],
+          [
+            "red_gear_2",
+            30
+          ],
+          [
+            "red_cube",
+            44
+          ],
+          [
+            "yellow_gear",
+            120
+          ]
+        ]
+      },
+      {
+        "id": "red_gear_2",
+        "type": "red gear",
+        "colour": "red",
+        "pixel": [
+          2078,
+          601
+        ],
+        "size_mm": 67,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "red_cube"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_cube",
+            0
+          ],
+          [
+            "plate",
+            30
+          ],
+          [
+            "red_gear_1",
+            63
+          ],
+          [
+            "yellow_gear",
+            274
+          ]
+        ]
+      },
+      {
+        "id": "grey_tray",
+        "type": "grey tray",
+        "pickable": false,
+        "note": "the plastic tray on the left; a place to put things"
+      },
+      {
+        "id": "black_tray",
+        "type": "black tray",
+        "pickable": false,
+        "note": "the black mat on the right; a place to put things"
+      }
+    ]
+  },
+  "results": [
+    {
+      "instruction_id": "scene_08_i1",
+      "target_pixel": null,
+      "actions": [
+        {
+          "action": "refuse",
+          "reason": "There is no gear in the grey tray; only a yellow gear is in the grey tray."
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_08_i2",
+      "target_pixel": null,
+      "actions": [
+        {
+          "action": "refuse",
+          "reason": "There is no small white part on the table."
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_08_i3",
+      "target_pixel": [
+        1732,
+        556
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "red_cube"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_08_i4",
+      "target_pixel": [
+        1732,
+        556
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "red_cube"
+        },
+        {
+          "action": "place",
+          "object": "black_tray"
+        },
+        {
+          "action": "pick",
+          "object": "red_gear_1"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        },
+        {
+          "action": "pick",
+          "object": "red_gear_2"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_08_i5",
+      "target_pixel": null,
+      "actions": [
+        {
+          "action": "refuse",
+          "reason": "The instruction asks for an uncontrolled movement (pushing) of an object (the cube) off another object (the gears)."
+        }
+      ]
+    }
+  ]
+}
