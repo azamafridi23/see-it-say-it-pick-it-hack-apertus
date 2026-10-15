@@ -9,6 +9,7 @@ pick-and-place plan with the target pixel, a question for the person, or a refus
 - **Team:** Asian Prompters — Randy Christian Saputra, Azam Afridi, [member], [member]
 - **Demo:** [link to the video]
 - **Slides:** [docs/slides.pdf](docs/slides.pdf)
+- **Report on Apertus's difficulties:** [docs/apertus_failure_modes.pdf](docs/apertus_failure_modes.pdf)
 
 ## 1. Summary
 
