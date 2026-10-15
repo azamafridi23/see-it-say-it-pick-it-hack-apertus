@@ -2,12 +2,17 @@
 
 The rules Apertus is given before it reads a scene graph and an instruction. One text file per version.
 
-    python pipelines/path_a/run.py --data dataset --out results/try_v2.json --prompt planner_v2
+    python pipelines/path_a/run.py --data dataset --planner single --prompt planner_v1
 
-Without `--prompt`, the default is used: `planner_v2` (set by `DEFAULT_PROMPT` in `planner.py`).
+The prompts in use are named in `pipelines/path_a/workcell.ini` (`[apertus]`): `planner_v1` for the
+single call; `agent_safety_v2`, `agent_reference_v2` and `agent_constraint_v4` for the three agents.
 The version used is written to the log next to every answer.
 
-To add a version: copy the latest file to `planner_v<N>.txt`, edit it, and add a row below. Keep old versions.
+Only the prompts in use, and the v3 agent prompts the tests check, are in the repository. The older
+versions in the tables below (`planner_v2`, `agent_safety_v1`, `agent_reference_v1`,
+`agent_constraint_v2`) are kept for the record of what was tried, not as files.
+
+To add a version: copy the latest file to `planner_v<N>.txt`, edit it, and add a row below.
 The reply format (thinking, decision, moves, message) is fixed by `planner.py`, so a prompt must describe that format.
 
 | Version | What changed | Script score on the public scenes |
@@ -24,7 +29,7 @@ and 51.4. The field itself was the cause: `planner_v1` with the field also score
 
 ## Multi-agent prompts (`--planner graph`)
 
-One file per agent. `PROMPTS` in `agents.py` defaults to v3. Override individual prompts with
+One file per agent; `workcell.ini` names the defaults. Override individual prompts with
 `--safety-prompt`, `--reference-prompt`, and `--constraint-prompt` when using `--planner graph`.
 Names and file paths are accepted. Every reply is validated locally and retried on invalid content.
 

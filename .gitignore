@@ -9,6 +9,8 @@ pipelines/*/out/
 docs/adr
 docs/figures
 docs/report
+docs/slides
+report
 
 # Secrets: every env file except the template
 .env.*
@@ -31,3 +33,13 @@ artifacts/simulator/
 # Slides: generated intermediates (the sources and PDFs stay committable)
 docs/slides/fig/canva/
 docs/slides/*.txt
+
+# Held-out runs: the submission file goes to Devpost, not into git
+/results_heldout*
+/logs/
+
+# Path A prompt versions no longer used by the pipeline or the tests
+pipelines/path_a/prompts/agent_safety_v1.txt
+pipelines/path_a/prompts/agent_reference_v1.txt
+pipelines/path_a/prompts/agent_constraint_v2.txt
+pipelines/path_a/prompts/planner_v2.txt

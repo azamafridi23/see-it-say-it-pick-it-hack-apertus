@@ -4,9 +4,11 @@ r"""Path B: from a photo and an instruction to a safe robot action.
 Apertus is the only learned model and the main detector; OpenCV only
 measures. See ARCHITECTURE.md and docs/adr/0001.
 
-    python pipelines/path_b/run.py --data dataset \
-        --out results/path_b.json
-    python starter/evaluate.py results/path_b.json --data dataset
+    python pipelines/path_b/run.py                 # held-out scenes
+    python pipelines/path_b/run.py --data dataset  # public, with score
+
+Held-out answers go to results_heldout_path_b.json; public ones to
+results/path_b_dev.json, then the score is printed.
 
 The server, model and key are read from API_BASE_URL, API_MODEL and
 APERTUS_API_KEY, in the environment or in the repository's .env file;
@@ -16,8 +18,7 @@ Or a local server:
 
     vllm serve swiss-ai/Apertus-v1.5-8B \
         --chat-template-content-format string
-    python pipelines/path_b/run.py --data dataset \
-        --out results/path_b.json
+    python pipelines/path_b/run.py --base-url http://localhost:8000/v1
 
 Stages, one module each:
     detect.py     Apertus boxes every object on the whole photo; each box
@@ -29,6 +30,8 @@ Stages, one module each:
 import argparse
 import json
 import os
+import subprocess
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -188,9 +191,11 @@ def main() -> None:
     ap = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", type=Path, default=Path("dataset"),
+    ap.add_argument("--data", type=Path, default=paths.ROOT / "heldout",
                     help="folder of scenes")
-    ap.add_argument("--out", type=Path, default=Path("results.json"))
+    ap.add_argument("--out", type=Path,
+                    help="default: results_heldout_path_b.json for "
+                         "heldout, else results/path_b_dev.json")
     ap.add_argument("--workcell", type=Path, default=workcell.DEFAULT_PATH,
                     help="the workcell's settings (INI)")
     # The server and model come from API_BASE_URL and API_MODEL in .env,
@@ -215,6 +220,14 @@ def main() -> None:
     ap.add_argument("--no-gaps", action="store_true",
                     help="leave the measured gaps out")
     args = ap.parse_args()
+    if args.out is None:
+        held_out = args.data.name == "heldout"
+        args.out = paths.ROOT / ("results_heldout_path_b.json" if held_out
+                                 else "results/path_b_dev.json")
+
+    # Raw replies go to a logs/ folder next to the results file.
+    log_path = args.out.parent / "logs" / f"{args.out.stem}.raw.jsonl"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
 
     # From the environment or .env, never the command line: keys on the
     # command line end up in the shell history.
@@ -228,7 +241,6 @@ def main() -> None:
                                 thinking=True)
 
     started = time.time()
-    log_path = args.out.with_suffix(".raw.jsonl")
     with log_path.open("w") as log:
         sub = run(args.data, model, log, cell=workcell.load(args.workcell),
                   widths=not args.no_widths, gaps=not args.no_gaps,
@@ -236,7 +248,14 @@ def main() -> None:
     sub["team"] = args.team
     args.out.write_text(json.dumps(sub, indent=2))
     print(f"{len(sub['results'])} answers in {args.out} "
-          f"in {time.time() - started:.0f}s; raw replies: {log_path}")
+          f"in {time.time() - started:.0f}s; raw replies: {log_path}",
+          flush=True)
+    # Public scenes come with answers: score right away. Held-out ones
+    # have none.
+    if (args.data / "ground_truth").exists():
+        evaluate = paths.ROOT / "starter" / "evaluate.py"
+        subprocess.run([sys.executable, str(evaluate), str(args.out),
+                        "--data", str(args.data)])
 
 
 if __name__ == "__main__":
