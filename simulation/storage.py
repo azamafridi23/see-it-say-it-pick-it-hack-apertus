@@ -4,10 +4,13 @@ import struct
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# The files each pipeline's run.py writes for the public scenes. The
+# single-call planner has none in the repository; to replay it, run
+# pipelines/path_a/run.py --planner single --data dataset --out results/path_a_single_dev.json
 RESULT_FILES = {
-    "path_a_graph": ROOT / "results/path_a_graph.json",
-    "path_a": ROOT / "results/path_a.json",
-    "path_b": ROOT / "results/path_b.json",
+    "path_a_graph": ROOT / "results/path_a_dev.json",
+    "path_a": ROOT / "results/path_a_single_dev.json",
+    "path_b": ROOT / "results/path_b_dev.json",
 }
 
 
@@ -81,7 +84,8 @@ def replay(scene_id: str, pipeline: str, instruction_id: str) -> dict:
     answer = next((a for a in answers(pipeline) if a["instruction_id"] == instruction_id), None)
     if instruction is None or answer is None:
         raise ValueError("No saved result for this instruction and pipeline. Choose another pipeline or use Live.")
-    log_path = RESULT_FILES[pipeline].with_suffix(".log.jsonl")
+    # run.py writes its log to results/logs/<results name>.log.jsonl.
+    log_path = ROOT / "results/logs" / f"{RESULT_FILES[pipeline].stem}.log.jsonl"
     elapsed = None
     if log_path.is_file():
         for line in log_path.read_text().splitlines():

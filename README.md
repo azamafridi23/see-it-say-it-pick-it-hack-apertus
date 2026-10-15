@@ -10,6 +10,9 @@ in, a safe robot action comes out (a plan, a question, or a refusal). Scoring ru
 - **Path B**: Apertus finds the objects itself, OpenCV measures them, and one Apertus call plans. Details:
   [ARCHITECTURE.md](pipelines/path_b/ARCHITECTURE.md).
 
+To watch the plans carried out by a simulated arm, open the [Pick Lab app](#4-see-the-plans-the-pick-lab-app-optional)
+(`make app`).
+
 ## Results on the public dev set (10 scenes, 50 instructions)
 
 Scored with the organisers' `starter/evaluate.py`.
@@ -116,6 +119,21 @@ script yourself. Write `uv run python` (case B) or `.venv/bin/python` (case C) i
 
 `run.py --help` lists each pipeline's options.
 
+### 4. See the plans: the Pick Lab app (optional)
+
+Watch a plan carried out by a simulated arm: an animated 2D arm, a top view, a 3D view, and the target
+pixel on the photo, for every public scene. It runs on your machine, not in Docker, and needs Node.js 20.9+.
+
+```
+make app          # then open http://localhost:3000
+```
+
+- **Replay** (the default) shows our saved answers for the public scenes: pick a scene and an
+  instruction, click **Load saved plan**, then **Play**. No key, no Apertus calls, no SAM 3.
+- **Live** runs Path A or Path B on any instruction you type, with the key in `.env`.
+
+Stop it with Ctrl+C. More: [apps/README.md](apps/README.md).
+
 ### Good to know
 
 - **New scenes** use the same layout as `heldout/`: one folder per scene with `rgb.png` and
@@ -125,8 +143,6 @@ script yourself. Write `uv run python` (case B) or `.venv/bin/python` (case C) i
   only calls Apertus. `make clean` deletes the cache.
 - **Scores vary slightly from run to run** because the endpoint is not fully deterministic (see the
   ranges above).
-- **The Pick Lab app** replays saved results with an animated 2D arm and the target pixels on the photo,
-  and can run either pipeline live. Replay makes no Apertus calls. See [apps/README.md](apps/README.md).
 
 ## Repository
 

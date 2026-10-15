@@ -15,7 +15,7 @@ It installs both pipelines and the API's packages (`uv sync --group app`), then 
 
 Open **http://localhost:3000**. The backend listens on `127.0.0.1:8000`. The launcher uses `.venv/bin/python` if present; `SIMULATOR_PYTHON` can select another interpreter. Stop both with Ctrl+C.
 
-Replay requires only the API dependencies above, not SAM 3, PyTorch, or an Apertus key. The app opens a saved Path A multi-agent result. Select an example, click **Load saved plan**, then **Play** or step through it. Saved Path B results become available if `results/path_b.json` exists. Missing replays are shown as unavailable rather than fabricated.
+Replay requires only the API dependencies above, not SAM 3, PyTorch, or an Apertus key. The app opens a saved Path A multi-agent result. Select an example, click **Load saved plan**, then **Play** or step through it. It replays `results/path_a_dev.json` (Path A, multi-agent) and `results/path_b_dev.json` (Path B), the files each pipeline's `run.py --data dataset` writes. The single-call planner has no saved results; `simulation/storage.py` names the file it would replay. Missing replays are shown as unavailable rather than fabricated.
 
 ### Instruction sources
 

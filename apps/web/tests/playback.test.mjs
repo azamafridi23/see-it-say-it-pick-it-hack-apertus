@@ -45,7 +45,7 @@ test("ask and refuse never move objects", () => {
   }
 });
 test("every saved plan can be replayed without missing-object or gripper errors", () => {
-  for (const filename of ["path_a.json", "path_a_graph.json"]) {
+  for (const filename of ["path_a_dev.json", "path_b_dev.json"]) {
     const saved = JSON.parse(readFileSync(new URL(`../../../results/${filename}`, import.meta.url), "utf8"));
     for (const answer of saved.results) {
       const ids = [...new Set(answer.actions.map(a => a.object).filter(Boolean))];

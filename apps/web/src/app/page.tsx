@@ -89,9 +89,12 @@ export default function Playground() {
       if (first) {
         setSceneId(first.id); setInstructionId(first.instructions[0]?.id || "");
         if (!first.instructions.length) return;
-        const saved = await api<Job>("/plans", { method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mode: "replay", scene_id: first.id, pipeline: "path_a_graph", instruction_id: first.instructions[0].id }) });
-        if (saved.result) acceptResult(saved.result);
+        // The backend is connected; a missing saved plan only leaves the stage empty.
+        try {
+          const saved = await api<Job>("/plans", { method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: "replay", scene_id: first.id, pipeline: "path_a_graph", instruction_id: first.instructions[0].id }) });
+          if (saved.result) acceptResult(saved.result);
+        } catch { /* the replay note under the button explains it */ }
       }
     } catch (e) { setConnected(false); setError((e as Error).message); }
     finally { setLoading(false); }

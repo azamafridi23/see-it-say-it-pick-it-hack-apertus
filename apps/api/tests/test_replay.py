@@ -34,6 +34,12 @@ class ReplayTests(unittest.TestCase):
         self.assertTrue(image.content.startswith(b"\x89PNG"))
         self.assertEqual(self.client.get("/api/scenes/not-a-scene/image").status_code, 404)
 
+    def test_shipped_results_can_be_replayed(self):
+        # The repository ships these two; a rename must not hide them.
+        for pipeline in ("path_a_graph", "path_b"):
+            self.assertTrue(RESULT_FILES[pipeline].is_file(), RESULT_FILES[pipeline])
+            self.assertTrue(answers(pipeline), pipeline)
+
     def test_every_saved_replay_retains_original_answer(self):
         for pipeline, path in RESULT_FILES.items():
             if not path.exists():
