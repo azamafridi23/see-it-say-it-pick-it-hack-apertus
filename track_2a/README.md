@@ -73,7 +73,7 @@ Replay needs no key and makes no Apertus calls. More: [src/apps/README.md](src/a
 | [technical_report.md](technical_report.md) | Architecture, use of Apertus, evaluation, limitations, reproducibility |
 | [docs/slides.pdf](docs/slides.pdf) | The five slides |
 | [Demo video](https://drive.google.com/file/d/1nHaDBsPiw71muJCHdRV6GNeSMVF0W8_A/view?usp=sharing) | The pipeline running locally |
-| [docs/apertus-difficulties.md](docs/apertus-difficulties.md) | Where Apertus had difficulty |
+| [docs/apertus_failure_modes.pdf](docs/apertus_failure_modes.pdf) | The two-page report on where Apertus had difficulty (evidence log: [docs/apertus-difficulties.md](docs/apertus-difficulties.md)) |
 | [docs/USAGE.md](docs/USAGE.md) | Every way to run it, with and without Docker |
 | [Path A architecture](src/pipelines/path_a/ARCHITECTURE.md), [agents](src/pipelines/path_a/MULTI_AGENT.md), [Path B](src/pipelines/path_b/ARCHITECTURE.md) | How each pipeline works |
 | [docs/CHALLENGE.md](docs/CHALLENGE.md), [docs/EVALUATION.md](docs/EVALUATION.md), [docs/DATA.md](docs/DATA.md) | The organisers' challenge, scoring and data notes |
