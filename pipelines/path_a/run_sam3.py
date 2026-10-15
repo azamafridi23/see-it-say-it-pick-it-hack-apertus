@@ -115,16 +115,27 @@ def _unpack(path: Path, label: str) -> list[dict]:
                                         masks)]
 
 
-def _run_prompt(image, prompt: str, threshold: float,
-                device: str) -> list[dict]:
-    """Run SAM 3 on one photo for one prompt."""
+def _encode(image, device: str):
+    """Encode the photo once, so every prompt can reuse its features."""
     model, processor = load(device)
-    inputs = processor(images=image, text=prompt, return_tensors="pt")
-    inputs = inputs.to(device)
+    inputs = processor(images=image, return_tensors="pt").to(device)
     with torch.no_grad():
-        outputs = model(**inputs)
+        features = model.get_vision_features(
+            pixel_values=inputs["pixel_values"])
 
-    sizes = inputs.get("original_sizes").tolist()
+    return features, inputs["original_sizes"].tolist()
+
+
+def _run_prompt(encoded, prompt: str, threshold: float,
+                device: str) -> list[dict]:
+    """Run SAM 3 for one prompt on an already encoded photo."""
+    model, processor = load(device)
+    features, sizes = encoded
+    text = processor(text=prompt, return_tensors="pt").to(device)
+    with torch.no_grad():
+        outputs = model(vision_embeds=features, input_ids=text["input_ids"],
+                        attention_mask=text["attention_mask"])
+
     result = processor.post_process_instance_segmentation(
         outputs, threshold=threshold, mask_threshold=CELL.sam3_mask_threshold,
         target_sizes=sizes)[0]
@@ -164,7 +175,7 @@ def detect(scene: Path, prompts=CELL.sam3_prompts,
         ``mask`` (bool [H, W]).
     """
     scene = Path(scene)
-    image, out = None, []
+    image, encoded, out = None, None, []
     for prompt in prompts:
         path = _cache_path(scene, prompt, threshold)
         if cache and path.exists():
@@ -173,7 +184,9 @@ def detect(scene: Path, prompts=CELL.sam3_prompts,
 
         image = image or Image.open(scene / "rgb.png").convert("RGB")
         started = time.time()
-        dets = _run_prompt(image, prompt, threshold, device)
+        # The image encoder is the costly part: run it once per photo.
+        encoded = encoded or _encode(image, device)
+        dets = _run_prompt(encoded, prompt, threshold, device)
         print(f"  {scene.name} {prompt!r}: {len(dets)} found in "
               f"{time.time() - started:.1f}s")
         if cache:
