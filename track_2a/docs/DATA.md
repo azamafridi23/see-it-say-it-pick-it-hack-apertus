@@ -1,6 +1,6 @@
 # The data
 
-Scoring rules: [EVALUATION.md](../EVALUATION.md). Answer format: [`schema/result.schema.json`](../schema/result.schema.json).
+Scoring rules: [EVALUATION.md](EVALUATION.md). Answer format: [`schema/result.schema.json`](../src/schema/result.schema.json).
 
 ```
 dataset/

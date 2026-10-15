@@ -14,7 +14,7 @@ jury** (pipeline logic 20, runs locally 10, code quality 5).
 ## What you submit
 
 One JSON file: `{"team": "...", "results": [ ... ]}` with one answer per instruction,
-each matching [`schema/result.schema.json`](schema/result.schema.json). The action
+each matching [`schema/result.schema.json`](../src/schema/result.schema.json). The action
 space is `pick`, `place`, `ask_user`, `refuse`.
 
 ```json

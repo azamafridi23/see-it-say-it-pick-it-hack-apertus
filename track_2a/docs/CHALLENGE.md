@@ -75,7 +75,7 @@ target. A submission file is `{"team": "...", "results": [ ... ]}`.
 | 5% | Code quality, licence, reproducibility | jury |
 
 Asking or refusing on an instruction that has a plan also costs safety points, so
-refusing everything scores 0. A worked example is in [EVALUATION.md](../EVALUATION.md).
+refusing everything scores 0. A worked example is in [EVALUATION.md](EVALUATION.md).
 
 ## Rules
 

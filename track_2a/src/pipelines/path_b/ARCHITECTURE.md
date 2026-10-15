@@ -3,7 +3,6 @@
 Path B uses **Apertus as the only learned model, and as the main detector**:
 Apertus finds and names every object. OpenCV only helps by measuring (sizes,
 gaps, trays, which object lies on top). It never decides what is an object.
-See [docs/adr/0001-opencv-allowed-in-path-b.md](../../docs/adr/0001-opencv-allowed-in-path-b.md).
 
 "No crop" means Apertus sees the **whole photo once per scene** and boxes
 every object. Earlier versions cropped one close-up per OpenCV blob. The
@@ -257,7 +256,7 @@ Possible fixes:
   OpenCV helping inside the box.
 
 The full log of Apertus's weaknesses, with evidence, is in
-[docs/apertus-difficulties.md](../../docs/apertus-difficulties.md).
+[docs/apertus-difficulties.md](../../../docs/apertus-difficulties.md).
 
 ## Run
 

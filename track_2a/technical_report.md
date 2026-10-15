@@ -6,8 +6,8 @@ pick-and-place plan with the target pixel, a question for the person, or a refus
 
 - **Track:** Track 2A — ZHAW: See It, Say It, Pick It: Vision-Language Grounding for a Real Robot Arm
 - **Event:** Online
-- **Team:** Asian Prompters — Randy Christian Saputra, Azam Afridi, [member], [member]
-- **Demo:** [link to the video]
+- **Team:** Asian Prompters — Randy Christian Saputra, Muhammad Azam Afridi, Wahyu Dwi Nugraha
+- **Demo:** [Video Demo](https://drive.google.com/file/d/1nHaDBsPiw71muJCHdRV6GNeSMVF0W8_A/view?usp=sharing)
 - **Slides:** [docs/slides.pdf](docs/slides.pdf)
 - **Report on Apertus's difficulties:** [docs/apertus_failure_modes.pdf](docs/apertus_failure_modes.pdf)
 

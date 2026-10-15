@@ -1,11 +1,11 @@
 # Your scenes
 
-Put new photos here and run `make run` (our submission, Path A) or
-`make run-b` (Path B). The answers go to `results/scenes_path_a.json` or
-`results/scenes_path_b.json`. Another folder works too:
-`make run DATA=path/to/folder`.
+Put new photos here and run `make run DATA=data/scenes`: our submission
+(Path A) in Docker. The answers go to `results/scenes_path_a.json`.
+Without Docker, `make run-a DATA=data/scenes` or `make run-b DATA=data/scenes`
+(Path B, answers in `results/scenes_path_b.json`). Another folder works too.
 
-One folder per scene, the same layout as `heldout/`:
+One folder per scene, the same layout as `data/heldout/`:
 
 ```
 scenes/
