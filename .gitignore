@@ -5,7 +5,7 @@ __pycache__/
 .env
 *.key
 .venv/
-pipelines/*/out/
+track_2a/src/pipelines/*/out/
 docs/adr
 docs/figures
 docs/report
@@ -34,17 +34,21 @@ artifacts/simulator/
 docs/slides/fig/canva/
 docs/slides/*.txt
 
-# Held-out runs: the submission file goes to Devpost, not into git
-/results_heldout*
+# Held-out runs stay out of git, except the submitted answers below.
+results_heldout*
+# The submitted held-out answers and their log are kept.
+!/track_2a/results/results_heldout.json
 /logs/
+track_2a/results/logs/*
+!/track_2a/results/logs/results_heldout.log.jsonl
 
 # Path A prompt versions no longer used by the pipeline or the tests
-pipelines/path_a/prompts/agent_safety_v1.txt
-pipelines/path_a/prompts/agent_reference_v1.txt
-pipelines/path_a/prompts/agent_constraint_v2.txt
-pipelines/path_a/prompts/planner_v2.txt
+track_2a/src/pipelines/path_a/prompts/agent_safety_v1.txt
+track_2a/src/pipelines/path_a/prompts/agent_reference_v1.txt
+track_2a/src/pipelines/path_a/prompts/agent_constraint_v2.txt
+track_2a/src/pipelines/path_a/prompts/planner_v2.txt
 
 # Scenes the jury adds: only the instructions and the calibration are committed
-/scenes/*
-!/scenes/README.md
-!/scenes/calibration.json
+/track_2a/data/scenes/*
+!/track_2a/data/scenes/README.md
+!/track_2a/data/scenes/calibration.json

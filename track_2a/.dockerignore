@@ -1,0 +1,15 @@
+# Secrets never go into the image; `make run` passes them at run time.
+.env
+.env.*
+!.env.example
+
+# Mounted at run time, or not needed to run Path A.
+data/
+results/
+docs/
+src/apps/
+src/package*.json
+src/pipelines/*/out/
+.venv/
+**/__pycache__/
+**/node_modules/

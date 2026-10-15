@@ -1,0 +1,47 @@
+[project]
+name = "see-it-say-it-pick-it"
+version = "1.0.0"
+description = "Hack Apertus 2026: photo + instruction -> plan, question or refusal"
+license = "Apache-2.0"
+requires-python = "==3.12.*"
+# The same pins as requirements.txt (generated from uv.lock by `make lock`).
+dependencies = [
+    # Shared: the organisers' starter/evaluate.py, Path A and Path B
+    "numpy==2.5.3",
+    "opencv-python==5.0.0.93",
+    # Path A: SAM 3 and the depth model run locally; Apertus agents
+    "torch==2.14.1",
+    "torchvision==0.29.1",
+    "transformers==5.18.0",
+    "accelerate==1.15.0",
+    "pillow==12.3.0",
+    "python-dotenv==1.2.4",
+    "openai==3.24.0",
+    "langgraph==1.2.14",
+    "jsonschema>=4.23,<5",
+]
+
+[tool.uv]
+# A set of scripts, not an installable package.
+package = false
+
+[dependency-groups]
+# The Pick Lab app (apps/api) and its tests: `uv sync --group app`.
+app = [
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.34,<1",
+    "certifi>=2025.1",
+    "httpx>=0.27,<1",
+]
+
+# Linux (and so the Docker image) uses PyTorch's CPU-only build: the default
+# Linux wheels bundle several GB of CUDA libraries. macOS and Windows keep
+# the standard wheels (on a Mac they use the Apple GPU).
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
