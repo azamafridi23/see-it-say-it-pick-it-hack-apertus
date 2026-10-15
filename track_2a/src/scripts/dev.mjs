@@ -1,7 +1,10 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 
-const python = process.env.SIMULATOR_PYTHON || (existsSync(".venv/bin/python") ? ".venv/bin/python" : "python3");
+// The venv is in the project root (track_2a/), one folder above src/.
+const python = process.env.SIMULATOR_PYTHON
+  || [".venv/bin/python", "../.venv/bin/python"].find(path => existsSync(path))
+  || "python3";
 const processGroups = process.platform !== "win32";
 const children = [
   spawn(python, ["-m", "uvicorn", "apps.api.main:app", "--host", "127.0.0.1", "--port", "8000"], { stdio: "inherit", detached: processGroups }),

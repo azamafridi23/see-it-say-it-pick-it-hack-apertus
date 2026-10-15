@@ -35,7 +35,8 @@ a while) and runs Path A on the five held-out scenes in `data/heldout/`. The ans
 
 The settings follow the Hack Apertus template: `LLM_API_KEY` (the key), `LLM_BASE_URL` (the endpoint)
 and `LLM_NAME` (the model). Only the key is required; the endpoint and the model default to the hosted
-hackathon endpoint and `apertus-v1.5-70b`. Variables set in the shell take precedence over `.env`.
+hackathon endpoint and `apertus-v1.5-70b`. `make run` mounts `.env` read-only into the container;
+variables set in the shell take precedence over it.
 
 The image runs SAM 3 on the CPU: it uses PyTorch's CPU-only build, which keeps the image small and
 the build fast, and a full held-out run still fits in about 10 minutes. Give Docker Desktop at least

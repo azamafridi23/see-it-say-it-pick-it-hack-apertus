@@ -23,7 +23,7 @@ help:  ## List the targets
 run: build _scenes  ## Path A in Docker on DATA -> results/
 	@mkdir -p results
 	docker run --rm \
-	  $(if $(wildcard .env),--env-file .env) \
+	  $(if $(wildcard .env),-v "$(CURDIR)/.env:/app/.env:ro") \
 	  -e LLM_NAME -e LLM_BASE_URL -e LLM_API_KEY \
 	  -v "$(abspath $(DATA)):/scenes:ro" -v "$(CURDIR)/results:/out" \
 	  $(IMAGE) --data /scenes --out "/out/$(OUT)"
