@@ -30,7 +30,7 @@ Both pipelines were tuned on these scenes, so held-out scores will be lower.
 
 ## Run it
 
-You need Docker (with at least 8 GB of memory for containers; no GPU) and an Apertus key. From this
+You need Docker (with at least 16 GB of memory for containers; no GPU) and an Apertus key. From this
 folder:
 
 ```bash
