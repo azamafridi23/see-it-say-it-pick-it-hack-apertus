@@ -1,5 +1,7 @@
 # Generated from uv.lock by `make lock`; do not edit. Python 3.12.
 #   pip install -r requirements.txt
+# Linux takes the CPU-only torch from PyTorch's own index:
+--extra-index-url https://download.pytorch.org/whl/cpu
 
 accelerate==1.15.0
     # via see-it-say-it-pick-it
@@ -30,12 +32,6 @@ colorama==0.4.6 ; sys_platform == 'win32'
     # via
     #   tqdm
     #   typer
-cuda-bindings==13.4.4 ; sys_platform == 'linux'
-    # via torch
-cuda-pathfinder==1.8.3 ; sys_platform == 'linux'
-    # via cuda-bindings
-cuda-toolkit==13.0.3.0 ; sys_platform == 'linux'
-    # via torch
 distro==1.9.0
     # via langsmith
 filelock==4.2.0
@@ -129,47 +125,6 @@ numpy==2.5.3
     #   see-it-say-it-pick-it
     #   torchvision
     #   transformers
-nvidia-cublas==13.1.1.3 ; sys_platform == 'linux'
-    # via
-    #   cuda-toolkit
-    #   nvidia-cudnn-cu13
-    #   nvidia-cusolver
-nvidia-cuda-cupti==13.0.85 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
-    # via cuda-toolkit
-nvidia-cuda-nvrtc==13.0.88 ; sys_platform == 'linux'
-    # via
-    #   cuda-toolkit
-    #   nvidia-cublas
-nvidia-cuda-runtime==13.0.96 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
-    # via cuda-toolkit
-nvidia-cudnn-cu13==9.24.0.43 ; sys_platform == 'linux'
-    # via torch
-nvidia-cufft==12.0.0.61 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
-    # via cuda-toolkit
-nvidia-cufile==1.15.1.6 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
-    # via cuda-toolkit
-nvidia-curand==10.4.0.35 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
-    # via cuda-toolkit
-nvidia-cusolver==12.0.4.66 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
-    # via cuda-toolkit
-nvidia-cusparse==12.6.3.3 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
-    # via
-    #   cuda-toolkit
-    #   nvidia-cusolver
-nvidia-cusparselt-cu13==0.8.1 ; sys_platform == 'linux'
-    # via torch
-nvidia-nccl-cu13==2.30.7 ; sys_platform == 'linux'
-    # via torch
-nvidia-nvjitlink==13.4.92 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
-    # via
-    #   cuda-toolkit
-    #   nvidia-cufft
-    #   nvidia-cusolver
-    #   nvidia-cusparse
-nvidia-nvshmem-cu13==3.4.5 ; sys_platform == 'linux'
-    # via torch
-nvidia-nvtx==13.0.85 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
-    # via cuda-toolkit
 openai==3.24.0
     # via see-it-say-it-pick-it
 opencv-python==5.0.0.93
@@ -247,12 +202,19 @@ tenacity==9.2.1
     # via langchain-core
 tokenizers==0.23.3
     # via transformers
-torch==2.14.1
+torch==2.14.1 ; sys_platform != 'linux'
     # via
     #   accelerate
     #   see-it-say-it-pick-it
     #   torchvision
-torchvision==0.29.1
+torch==2.14.1+cpu ; sys_platform == 'linux'
+    # via
+    #   accelerate
+    #   see-it-say-it-pick-it
+    #   torchvision
+torchvision==0.29.1 ; sys_platform != 'linux'
+    # via see-it-say-it-pick-it
+torchvision==0.29.1+cpu ; sys_platform == 'linux'
     # via see-it-say-it-pick-it
 tqdm==4.70.1
     # via
@@ -260,8 +222,6 @@ tqdm==4.70.1
     #   transformers
 transformers==5.18.0
     # via see-it-say-it-pick-it
-triton==3.8.0 ; sys_platform == 'linux'
-    # via torch
 truststore==0.10.5 ; sys_platform != 'emscripten'
     # via
     #   httpcore2

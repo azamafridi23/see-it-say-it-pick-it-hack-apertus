@@ -19,7 +19,6 @@ import argparse
 import base64
 import hashlib
 import json
-import os
 import re
 import time
 from pathlib import Path
@@ -28,6 +27,7 @@ import cv2
 from dotenv import load_dotenv
 from openai import OpenAI
 
+import workcell
 from workcell import CELL
 
 load_dotenv()
@@ -174,9 +174,9 @@ def names_for(scene: Path, model: str = CELL.model,
     if path.exists():
         objs = json.loads(path.read_text())["objects"]
     else:
-        api_key = os.environ.get("APERTUS_API_KEY")
+        api_key = workcell.api_key()
         if not api_key:
-            print("  no APERTUS_API_KEY: skipping Apertus's object names")
+            print("  no LLM_API_KEY: skipping Apertus's object names")
             return []
 
         try:
@@ -234,10 +234,10 @@ def main():
     ap.add_argument("--out", type=Path,
                     default=Path(__file__).resolve().parent / "out")
     args = ap.parse_args()
-    api_key = os.environ.get("APERTUS_API_KEY")
+    api_key = workcell.api_key()
     if not api_key:
-        raise SystemExit("APERTUS_API_KEY is not set: put "
-                         "APERTUS_API_KEY=... in the .env file at the "
+        raise SystemExit("LLM_API_KEY is not set: put "
+                         "LLM_API_KEY=... in the .env file at the "
                          "repository root")
 
     client = OpenAI(api_key=api_key, base_url=args.base_url, timeout=120)

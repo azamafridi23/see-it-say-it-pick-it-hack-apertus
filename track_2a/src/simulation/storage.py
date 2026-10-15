@@ -4,16 +4,17 @@ import struct
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+PROJECT = ROOT.parent  # track_2a/: data/ and results/
 RESULT_FILES = {
-    "path_a_graph": ROOT / "results/path_a_graph.json",
-    "path_a": ROOT / "results/path_a.json",
-    "path_b": ROOT / "results/path_b.json",
+    "path_a_graph": PROJECT / "results/path_a_graph.json",
+    "path_a": PROJECT / "results/path_a.json",
+    "path_b": PROJECT / "results/path_b.json",
 }
 
 
 def scene_folder(scene_id: str) -> Path:
     # Use an allowlist rather than accepting arbitrary paths from HTTP.
-    folders = {p.name: p for p in (ROOT / "dataset").iterdir() if p.is_dir() and (p / "rgb.png").is_file()}
+    folders = {p.name: p for p in (PROJECT / "data" / "dataset").iterdir() if p.is_dir() and (p / "rgb.png").is_file()}
     if scene_id not in folders:
         raise ValueError("Unknown scene")
     return folders[scene_id]

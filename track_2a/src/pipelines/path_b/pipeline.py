@@ -183,7 +183,8 @@ def api_key(env_file: Path = paths.ROOT / ".env") -> str:
     Returns:
         The key, or ``"none"`` when there is none (a local server).
     """
-    return env_value("APERTUS_API_KEY", env_file) or "none"
+    return (env_value("LLM_API_KEY", env_file)
+            or env_value("APERTUS_API_KEY", env_file) or "none")
 
 
 def main() -> None:
@@ -191,19 +192,22 @@ def main() -> None:
     ap = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", type=Path, default=paths.ROOT / "heldout",
+    ap.add_argument("--data", type=Path,
+                    default=paths.ROOT / "data" / "heldout",
                     help="folder of scenes")
     ap.add_argument("--out", type=Path,
                     help="default: results_heldout_path_b.json for "
                          "heldout, else results/path_b_dev.json")
     ap.add_argument("--workcell", type=Path, default=workcell.DEFAULT_PATH,
                     help="the workcell's settings (INI)")
-    # The server and model come from API_BASE_URL and API_MODEL in .env,
-    # unless given here; without either, the hosted endpoint, as in Path A.
-    ap.add_argument("--base-url", default=env_value("API_BASE_URL")
+    # The server and model come from LLM_BASE_URL and LLM_NAME (or
+    # API_BASE_URL and API_MODEL) in the environment or .env, unless given
+    # here; without any, the hosted endpoint, as in Path A.
+    ap.add_argument("--base-url", default=env_value("LLM_BASE_URL")
+                    or env_value("API_BASE_URL")
                     or "https://hackapertus.livemap.sh/v1")
-    ap.add_argument("--model", default=env_value("API_MODEL")
-                    or "apertus-v1.5-70b")
+    ap.add_argument("--model", default=env_value("LLM_NAME")
+                    or env_value("API_MODEL") or "apertus-v1.5-70b")
     ap.add_argument("--max-side", type=int, default=1024,
                     help="resize the photo so its long side is at most this")
     ap.add_argument("--timeout", type=float, default=180)
@@ -253,7 +257,7 @@ def main() -> None:
     # Public scenes come with answers: score right away. Held-out ones
     # have none.
     if (args.data / "ground_truth").exists():
-        evaluate = paths.ROOT / "starter" / "evaluate.py"
+        evaluate = paths.SRC / "starter" / "evaluate.py"
         subprocess.run([sys.executable, str(evaluate), str(args.out),
                         "--data", str(args.data)])
 

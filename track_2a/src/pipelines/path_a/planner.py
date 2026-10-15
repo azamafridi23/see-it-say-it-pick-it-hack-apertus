@@ -18,11 +18,11 @@ written to the log with every answer.
 from __future__ import annotations
 
 import json
-import os
 import time
 from pathlib import Path
 
 from planning import check
+import workcell
 from workcell import CELL
 
 from dotenv import load_dotenv
@@ -235,13 +235,13 @@ class Planner:
         Args:
             model: The model name on the server.
             base_url: The server's OpenAI-compatible URL.
-            api_key: The key; APERTUS_API_KEY from the environment if None.
+            api_key: The key; LLM_API_KEY or APERTUS_API_KEY if None.
             prompt: The planner prompt, as for ``load_prompt()``.
         """
         self.model = model
         self.prompt_name, self.system = load_prompt(prompt)
         self.client = OpenAI(
-            api_key=api_key or os.environ.get("APERTUS_API_KEY") or "none",
+            api_key=api_key or workcell.api_key() or "none",
             base_url=base_url, timeout=120)
 
     def ask(self, messages: list[dict],

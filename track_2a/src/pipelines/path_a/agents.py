@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 from typing import TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -39,6 +38,7 @@ from planner import check, describe, load_prompt, to_answer, with_patience
 from planning import order_moves
 from agent_contracts import (SAFETY_SCHEMA, constraint_schema,
                              reference_schema, validate_reply)
+import workcell
 from workcell import CELL
 
 
@@ -137,7 +137,7 @@ class GraphPlanner:
         Args:
             model: The model name on the server.
             base_url: The server's OpenAI-compatible URL.
-            api_key: The key; APERTUS_API_KEY from the environment if None.
+            api_key: The key; LLM_API_KEY or APERTUS_API_KEY if None.
             prompt_names: Prompts to use instead of workcell.ini's, by
                 role.
 
@@ -153,7 +153,7 @@ class GraphPlanner:
         self.prompts = {role: load_prompt(name)
                         for role, name in names.items()}
         self.prompt_name = "+".join(name for name, _ in self.prompts.values())
-        key = api_key or os.environ.get("APERTUS_API_KEY") or "none"
+        key = api_key or workcell.api_key() or "none"
         self.client = OpenAI(api_key=key, base_url=base_url, timeout=120)
         self.app = self.build()
 

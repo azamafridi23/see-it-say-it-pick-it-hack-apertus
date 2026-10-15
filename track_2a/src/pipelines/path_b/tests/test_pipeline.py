@@ -27,7 +27,7 @@ import detect  # noqa: E402
 import pipeline  # noqa: E402
 import safety  # noqa: E402
 
-DATA = ROOT / "dataset"
+DATA = ROOT.parent / "data" / "dataset"
 GT_FILE = DATA / "ground_truth" / "ground_truth.json"
 GT = json.loads(GT_FILE.read_text())["instructions"]
 

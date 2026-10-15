@@ -3,12 +3,27 @@
 Every value particular to this camera, table, object set and model choice
 lives in ``workcell.ini``; the code holds only the logic. ``CELL`` is the
 loaded file, shared by every module.
+
+The Hack Apertus template's variables override the model settings:
+LLM_NAME (the model), LLM_BASE_URL (the endpoint) and LLM_API_KEY. They
+are read from the environment, else from the project's .env file.
 """
 import configparser
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 DEFAULT_PATH = Path(__file__).with_name("workcell.ini")
+# track_2a/.env, three folders above src/pipelines/path_a/.
+load_dotenv(Path(__file__).resolve().parents[3] / ".env")
+
+
+def api_key() -> str | None:
+    """Return the endpoint key: LLM_API_KEY, else APERTUS_API_KEY."""
+    return (os.environ.get("LLM_API_KEY")
+            or os.environ.get("APERTUS_API_KEY"))
 
 
 @dataclass(frozen=True)
@@ -24,6 +39,7 @@ class Workcell:
     agent_prompts: dict
     agent_retries: int
     agent_max_tokens: int
+    parallel_requests: int
     # [sam3]
     sam3_model: str
     sam3_revision: str
@@ -104,14 +120,15 @@ def load(path: Path = DEFAULT_PATH) -> Workcell:
     agent_prompts = {role: apertus[f"{role}_prompt"]
                      for role in ("safety", "reference", "constraint")}
     return Workcell(
-        model=apertus["model"],
-        base_url=apertus["base_url"],
+        model=os.environ.get("LLM_NAME") or apertus["model"],
+        base_url=os.environ.get("LLM_BASE_URL") or apertus["base_url"],
         single_call_prompt=apertus["single_call_prompt"],
         single_call_retries=apertus.getint("single_call_retries"),
         single_call_max_tokens=apertus.getint("single_call_max_tokens"),
         agent_prompts=agent_prompts,
         agent_retries=apertus.getint("agent_retries"),
         agent_max_tokens=apertus.getint("agent_max_tokens"),
+        parallel_requests=apertus.getint("parallel_requests"),
         sam3_model=sam3["model"],
         sam3_revision=sam3["revision"],
         sam3_threshold=sam3.getfloat("threshold"),

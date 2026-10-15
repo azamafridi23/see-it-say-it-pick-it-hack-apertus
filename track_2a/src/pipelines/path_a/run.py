@@ -18,8 +18,9 @@ builds the scene graph (scene_graph.py). Per instruction: Apertus reads
 the scene graph and the instruction and answers, and code checks the
 answer (agents.py, or planner.py with --planner single).
 
-Needs APERTUS_API_KEY in a .env file. Any OpenAI-compatible server works:
---base-url, --model. The category in instructions.txt is not used.
+Needs LLM_API_KEY (or APERTUS_API_KEY) in the environment or a .env file.
+Any OpenAI-compatible server works: --base-url, --model (or LLM_BASE_URL,
+LLM_NAME). The category in instructions.txt is not used.
 """
 from __future__ import annotations
 
@@ -28,6 +29,7 @@ import json
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import planner
@@ -39,8 +41,10 @@ def main():
     ap = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    root = Path(__file__).resolve().parents[2]
-    ap.add_argument("--data", type=Path, default=root / "heldout",
+    # The project root (track_2a/): data/ and results/ live there, the
+    # code in src/.
+    root = Path(__file__).resolve().parents[3]
+    ap.add_argument("--data", type=Path, default=root / "data" / "heldout",
                     help="a folder of scenes, or one scene folder")
     ap.add_argument("--out", type=Path,
                     help="default: results_heldout.json for heldout, "
@@ -63,6 +67,9 @@ def main():
                          "(planner.py). graph: three Apertus agents in a "
                          "fixed LangGraph graph (agents.py)")
     ap.add_argument("--team", default="path_a")
+    ap.add_argument("--workers", type=int, default=CELL.parallel_requests,
+                    help="instructions sent to Apertus at the same time "
+                         f"(default: {CELL.parallel_requests})")
     ap.add_argument("--no-apertus-vision", action="store_true",
                     help="do not ask Apertus to name the objects it sees")
     ap.add_argument("--graphs", type=Path,
@@ -90,7 +97,7 @@ def main():
         ap.error("Agent prompt overrides require --planner graph.")
 
     from scene_graph import scene_dirs
-    sys.path.insert(0, str(root / "starter"))
+    sys.path.insert(0, str(root / "src" / "starter"))
     from evaluate import answer_type
     from scene_io import load_scene
 
@@ -106,16 +113,25 @@ def main():
           f"prompt: {plan.prompt_name}")
     args.graphs.mkdir(exist_ok=True)
 
-    results, started = [], time.time()
-    with log_path.open("w") as log_file:
+    # The instructions are independent: Apertus answers several at once
+    # while the main thread builds the next photo's scene graph. The
+    # answers are written in the original order.
+    jobs, started = [], time.time()
+    with ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:
         for scene in scene_dirs(args.data):
             graph = _scene_graph(scene, args)
             for instruction_id, _, text in load_scene(scene).instructions:
-                answer, log = plan.answer(instruction_id, text, graph)
-                results.append(answer)
-                log_file.write(json.dumps({**log, "answer": answer}) + "\n")
-                print(_progress_line(instruction_id, text, answer, log,
-                                     answer_type))
+                job = pool.submit(plan.answer, instruction_id, text, graph)
+                job.add_done_callback(
+                    _printer(instruction_id, text, answer_type))
+                jobs.append(job)
+
+    results = []
+    with log_path.open("w") as log_file:
+        for job in jobs:
+            answer, log = job.result()
+            results.append(answer)
+            log_file.write(json.dumps({**log, "answer": answer}) + "\n")
 
     submission = {"team": args.team, "results": results}
     args.out.write_text(json.dumps(submission, indent=2))
@@ -124,7 +140,7 @@ def main():
 
     # Public scenes: score right away. Held-out scenes have no answers.
     if (args.data / "ground_truth").exists():
-        evaluate = root / "starter" / "evaluate.py"
+        evaluate = root / "src" / "starter" / "evaluate.py"
         subprocess.run([sys.executable, str(evaluate), str(args.out),
                         "--data", str(args.data)])
 
@@ -145,6 +161,17 @@ def _scene_graph(scene: Path, args) -> dict:
     graph_file.write_text(json.dumps(graph, indent=2))
     render(scene, objs, args.graphs / f"{scene.name}_graph.jpg")
     return graph
+
+
+def _printer(instruction_id, text, answer_type):
+    """A callback that prints one answer as soon as it is ready."""
+    def done(job):
+        if job.exception() is None:
+            answer, log = job.result()
+            print(_progress_line(instruction_id, text, answer, log,
+                                 answer_type), flush=True)
+
+    return done
 
 
 def _progress_line(instruction_id, text, answer, log, answer_type) -> str:

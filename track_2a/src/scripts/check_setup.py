@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT / "pipelines" / "path_a"))
 
 def main() -> int:
     """Run every check and report them."""
-    load_dotenv(ROOT / ".env")
+    load_dotenv(ROOT.parent / ".env")
     failed = False
 
     def report(ok: bool, text: str):
@@ -26,12 +26,10 @@ def main() -> int:
         failed |= not ok
         print(f"  {'ok  ' if ok else 'FAIL'} {text}")
 
-    from workcell import CELL
-    base_url = os.environ.get("API_BASE_URL") or CELL.base_url
-    model = CELL.model
-    key = os.environ.get("APERTUS_API_KEY")
-    report(bool(key), "APERTUS_API_KEY is set in .env"
-           if key else "APERTUS_API_KEY is missing: add it to .env")
+    from workcell import CELL, api_key
+    base_url, model, key = CELL.base_url, CELL.model, api_key()
+    report(bool(key), "LLM_API_KEY is set"
+           if key else "LLM_API_KEY is missing: set it or add it to .env")
 
     if key:
         from openai import OpenAI
@@ -44,7 +42,8 @@ def main() -> int:
         except Exception as error:  # any failure means the run would fail
             report(False, f"cannot reach {base_url}: {type(error).__name__}")
 
-    folder = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "heldout"
+    folder = (Path(sys.argv[1]) if len(sys.argv) > 1
+              else ROOT.parent / "data" / "heldout")
     scenes = sorted(p.parent for p in folder.glob("*/rgb.png"))
     without = [s.name for s in scenes if not (s / "instructions.txt").exists()]
     calibrated = all((s / "calibration.json").exists()
