@@ -1,0 +1,258 @@
+{
+  "scene": "scene_01",
+  "elapsed_seconds": 14.483,
+  "measured_objects": [
+    {
+      "id": 1,
+      "kind": "red cube",
+      "box": [
+        171,
+        847,
+        553,
+        1253
+      ],
+      "pixel": [
+        362,
+        1050
+      ],
+      "colour": "red",
+      "width_mm": 94,
+      "gaps": {
+        "2": 4.4,
+        "3": 3.9
+      },
+      "on": []
+    },
+    {
+      "id": 2,
+      "kind": "yellow gear",
+      "box": [
+        730,
+        773,
+        942,
+        1008
+      ],
+      "pixel": [
+        836,
+        890
+      ],
+      "colour": "yellow",
+      "width_mm": 53,
+      "gaps": {
+        "1": 4.4,
+        "3": 1.4
+      },
+      "on": []
+    },
+    {
+      "id": 3,
+      "kind": "mug",
+      "box": [
+        636,
+        354,
+        1126,
+        716
+      ],
+      "pixel": [
+        881,
+        535
+      ],
+      "colour": "green",
+      "width_mm": 91,
+      "gaps": {
+        "1": 3.9,
+        "2": 1.4
+      },
+      "on": []
+    }
+  ],
+  "graph": {
+    "hand_present": false,
+    "left_to_right": [
+      "red_cube",
+      "yellow_gear",
+      "mug"
+    ],
+    "top_to_bottom": [
+      "mug",
+      "yellow_gear",
+      "red_cube"
+    ],
+    "objects": [
+      {
+        "id": "red_cube",
+        "type": "red cube",
+        "colour": "red",
+        "pixel": [
+          362,
+          1050
+        ],
+        "size_mm": 94,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "mug",
+            39
+          ],
+          [
+            "yellow_gear",
+            44
+          ]
+        ]
+      },
+      {
+        "id": "yellow_gear",
+        "type": "yellow gear",
+        "colour": "yellow",
+        "pixel": [
+          836,
+          890
+        ],
+        "size_mm": 53,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "mug",
+            14
+          ],
+          [
+            "red_cube",
+            44
+          ]
+        ]
+      },
+      {
+        "id": "mug",
+        "type": "mug",
+        "colour": "green",
+        "pixel": [
+          881,
+          535
+        ],
+        "size_mm": 91,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "yellow_gear",
+            14
+          ],
+          [
+            "red_cube",
+            39
+          ]
+        ]
+      },
+      {
+        "id": "grey_tray",
+        "type": "grey tray",
+        "pickable": false,
+        "note": "the plastic tray on the left; a place to put things"
+      },
+      {
+        "id": "black_tray",
+        "type": "black tray",
+        "pickable": false,
+        "note": "the black mat on the right; a place to put things"
+      }
+    ]
+  },
+  "results": [
+    {
+      "instruction_id": "scene_01_i1",
+      "target_pixel": [
+        362,
+        1050
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "red_cube"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_01_i2",
+      "target_pixel": [
+        836,
+        890
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "yellow_gear"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_01_i3",
+      "target_pixel": [
+        836,
+        890
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "yellow_gear"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_01_i4",
+      "target_pixel": [
+        362,
+        1050
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "red_cube"
+        },
+        {
+          "action": "place",
+          "object": "black_tray"
+        },
+        {
+          "action": "pick",
+          "object": "yellow_gear"
+        },
+        {
+          "action": "place",
+          "object": "black_tray"
+        },
+        {
+          "action": "pick",
+          "object": "mug"
+        },
+        {
+          "action": "place",
+          "object": "black_tray"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_01_i5",
+      "target_pixel": null,
+      "actions": [
+        {
+          "action": "refuse",
+          "reason": "There is no blue cube on the table."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,341 @@
+{
+  "scene": "scene_04",
+  "elapsed_seconds": 15.627,
+  "measured_objects": [
+    {
+      "id": 1,
+      "kind": "white part",
+      "box": [
+        1361,
+        816,
+        2066,
+        1427
+      ],
+      "pixel": [
+        1713,
+        1121
+      ],
+      "colour": "white",
+      "width_mm": 151,
+      "gaps": {
+        "2": 5.5,
+        "3": 0.0,
+        "4": 0.0
+      },
+      "on": []
+    },
+    {
+      "id": 2,
+      "kind": "grey part",
+      "box": [
+        1430,
+        337,
+        2022,
+        598
+      ],
+      "pixel": [
+        1726,
+        467
+      ],
+      "colour": "grey",
+      "width_mm": 66,
+      "gaps": {
+        "1": 5.5,
+        "3": 0.0,
+        "4": 15.4
+      },
+      "on": []
+    },
+    {
+      "id": 3,
+      "kind": "grey part",
+      "box": [
+        2017,
+        380,
+        2252,
+        860
+      ],
+      "pixel": [
+        2134,
+        620
+      ],
+      "colour": "grey",
+      "width_mm": 59,
+      "gaps": {
+        "1": 0.0,
+        "2": 0.0,
+        "4": 8.7
+      },
+      "on": []
+    },
+    {
+      "id": 4,
+      "kind": "mug",
+      "box": [
+        1958,
+        1209,
+        2360,
+        1663
+      ],
+      "pixel": [
+        2159,
+        1436
+      ],
+      "colour": "green",
+      "width_mm": 98,
+      "gaps": {
+        "1": 0.0,
+        "2": 15.1,
+        "3": 8.7
+      },
+      "on": []
+    }
+  ],
+  "graph": {
+    "hand_present": false,
+    "left_to_right": [
+      "white_part",
+      "grey_part_1",
+      "grey_part_2",
+      "mug"
+    ],
+    "top_to_bottom": [
+      "grey_part_1",
+      "grey_part_2",
+      "white_part",
+      "mug"
+    ],
+    "objects": [
+      {
+        "id": "white_part",
+        "type": "white part",
+        "colour": "white",
+        "pixel": [
+          1713,
+          1121
+        ],
+        "size_mm": 151,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "grey_part_2",
+          "mug"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "grey_part_2",
+            0
+          ],
+          [
+            "mug",
+            0
+          ],
+          [
+            "grey_part_1",
+            55
+          ]
+        ]
+      },
+      {
+        "id": "grey_part_1",
+        "type": "grey part",
+        "colour": "grey",
+        "pixel": [
+          1726,
+          467
+        ],
+        "size_mm": 66,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "grey_part_2"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "grey_part_2",
+            0
+          ],
+          [
+            "white_part",
+            55
+          ],
+          [
+            "mug",
+            154
+          ]
+        ]
+      },
+      {
+        "id": "grey_part_2",
+        "type": "grey part",
+        "colour": "grey",
+        "pixel": [
+          2134,
+          620
+        ],
+        "size_mm": 59,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "white_part",
+          "grey_part_1"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "white_part",
+            0
+          ],
+          [
+            "grey_part_1",
+            0
+          ],
+          [
+            "mug",
+            87
+          ]
+        ]
+      },
+      {
+        "id": "mug",
+        "type": "mug",
+        "colour": "green",
+        "pixel": [
+          2159,
+          1436
+        ],
+        "size_mm": 98,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "white_part"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "white_part",
+            0
+          ],
+          [
+            "grey_part_2",
+            87
+          ],
+          [
+            "grey_part_1",
+            151
+          ]
+        ]
+      },
+      {
+        "id": "grey_tray",
+        "type": "grey tray",
+        "pickable": false,
+        "note": "the plastic tray on the left; a place to put things"
+      },
+      {
+        "id": "black_tray",
+        "type": "black tray",
+        "pickable": false,
+        "note": "the black mat on the right; a place to put things"
+      }
+    ]
+  },
+  "results": [
+    {
+      "instruction_id": "scene_04_i1",
+      "target_pixel": [
+        1713,
+        1121
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "white_part"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_04_i2",
+      "target_pixel": [
+        2159,
+        1436
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "mug"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_04_i3",
+      "target_pixel": [
+        2134,
+        620
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "grey_part_2"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_04_i4",
+      "target_pixel": [
+        1713,
+        1121
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "white_part"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        },
+        {
+          "action": "pick",
+          "object": "grey_part_1"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        },
+        {
+          "action": "pick",
+          "object": "grey_part_2"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_04_i5",
+      "target_pixel": null,
+      "actions": [
+        {
+          "action": "refuse",
+          "reason": "The instruction asks for an uncontrolled movement (throwing), which is prohibited."
+        }
+      ]
+    }
+  ]
+}

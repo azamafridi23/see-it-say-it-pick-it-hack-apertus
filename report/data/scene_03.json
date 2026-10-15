@@ -1,0 +1,334 @@
+{
+  "scene": "scene_03",
+  "elapsed_seconds": 15.462,
+  "measured_objects": [
+    {
+      "id": 1,
+      "kind": "red gear",
+      "box": [
+        1361,
+        603,
+        1763,
+        969
+      ],
+      "pixel": [
+        1562,
+        786
+      ],
+      "colour": "red",
+      "width_mm": 92,
+      "gaps": {
+        "2": 0.8,
+        "3": 0.0,
+        "4": 8.5
+      },
+      "on": []
+    },
+    {
+      "id": 2,
+      "kind": "yellow gear",
+      "box": [
+        1763,
+        1000,
+        1958,
+        1203
+      ],
+      "pixel": [
+        1860,
+        1101
+      ],
+      "colour": "yellow",
+      "width_mm": 48,
+      "gaps": {
+        "1": 0.8,
+        "3": 0.4,
+        "4": 3.7
+      },
+      "on": []
+    },
+    {
+      "id": 3,
+      "kind": "red gear",
+      "box": [
+        1745,
+        607,
+        2142,
+        984
+      ],
+      "pixel": [
+        1943,
+        795
+      ],
+      "colour": "red",
+      "width_mm": 94,
+      "gaps": {
+        "1": 0.0,
+        "2": 0.4,
+        "4": 0.0
+      },
+      "on": []
+    },
+    {
+      "id": 4,
+      "kind": "red gear",
+      "box": [
+        2105,
+        611,
+        2433,
+        995
+      ],
+      "pixel": [
+        2269,
+        803
+      ],
+      "colour": "red",
+      "width_mm": 82,
+      "gaps": {
+        "1": 8.6,
+        "2": 3.7,
+        "3": 0.0
+      },
+      "on": []
+    }
+  ],
+  "graph": {
+    "hand_present": false,
+    "left_to_right": [
+      "red_gear_1",
+      "yellow_gear",
+      "red_gear_2",
+      "red_gear_3"
+    ],
+    "top_to_bottom": [
+      "red_gear_1",
+      "red_gear_2",
+      "red_gear_3",
+      "yellow_gear"
+    ],
+    "objects": [
+      {
+        "id": "red_gear_1",
+        "type": "red gear",
+        "colour": "red",
+        "pixel": [
+          1562,
+          786
+        ],
+        "size_mm": 92,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "red_gear_2"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_gear_2",
+            0
+          ],
+          [
+            "yellow_gear",
+            8
+          ],
+          [
+            "red_gear_3",
+            85
+          ]
+        ]
+      },
+      {
+        "id": "yellow_gear",
+        "type": "yellow gear",
+        "colour": "yellow",
+        "pixel": [
+          1860,
+          1101
+        ],
+        "size_mm": 48,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_gear_2",
+            4
+          ],
+          [
+            "red_gear_1",
+            8
+          ],
+          [
+            "red_gear_3",
+            37
+          ]
+        ]
+      },
+      {
+        "id": "red_gear_2",
+        "type": "red gear",
+        "colour": "red",
+        "pixel": [
+          1943,
+          795
+        ],
+        "size_mm": 94,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "red_gear_1",
+          "red_gear_3"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_gear_1",
+            0
+          ],
+          [
+            "red_gear_3",
+            0
+          ],
+          [
+            "yellow_gear",
+            4
+          ]
+        ]
+      },
+      {
+        "id": "red_gear_3",
+        "type": "red gear",
+        "colour": "red",
+        "pixel": [
+          2269,
+          803
+        ],
+        "size_mm": 82,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "red_gear_2"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_gear_2",
+            0
+          ],
+          [
+            "yellow_gear",
+            37
+          ],
+          [
+            "red_gear_1",
+            86
+          ]
+        ]
+      },
+      {
+        "id": "grey_tray",
+        "type": "grey tray",
+        "pickable": false,
+        "note": "the plastic tray on the left; a place to put things"
+      },
+      {
+        "id": "black_tray",
+        "type": "black tray",
+        "pickable": false,
+        "note": "the black mat on the right; a place to put things"
+      }
+    ]
+  },
+  "results": [
+    {
+      "instruction_id": "scene_03_i1",
+      "target_pixel": [
+        1860,
+        1101
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "yellow_gear"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_03_i2",
+      "target_pixel": [
+        1562,
+        786
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "red_gear_1"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_03_i3",
+      "target_pixel": [
+        1943,
+        795
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "red_gear_2"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_03_i4",
+      "target_pixel": [
+        1562,
+        786
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "red_gear_1"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        },
+        {
+          "action": "pick",
+          "object": "red_gear_2"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        },
+        {
+          "action": "pick",
+          "object": "red_gear_3"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_03_i5",
+      "target_pixel": null,
+      "actions": [
+        {
+          "action": "ask_user",
+          "question": "Which red gear do you mean, the leftmost, middle, or rightmost one?"
+        }
+      ]
+    }
+  ]
+}

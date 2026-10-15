@@ -1,0 +1,717 @@
+{
+  "scene": "scene_10",
+  "elapsed_seconds": 20.433,
+  "measured_objects": [
+    {
+      "id": 1,
+      "kind": "red gear",
+      "box": [
+        218,
+        856,
+        570,
+        1246
+      ],
+      "pixel": [
+        394,
+        1051
+      ],
+      "colour": "red",
+      "width_mm": 87,
+      "gaps": {
+        "2": 0.1,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 1.3,
+        "6": 4.9,
+        "7": 5.0,
+        "8": 22.0
+      },
+      "on": []
+    },
+    {
+      "id": 2,
+      "kind": "plate",
+      "box": [
+        147,
+        345,
+        693,
+        851
+      ],
+      "pixel": [
+        420,
+        598
+      ],
+      "colour": "yellow",
+      "width_mm": 127,
+      "gaps": {
+        "1": 0.1,
+        "3": 9.4,
+        "4": 0.0,
+        "5": 3.2,
+        "6": 12.3,
+        "7": 0.0,
+        "8": 19.4
+      },
+      "on": []
+    },
+    {
+      "id": 3,
+      "kind": "mandarin",
+      "box": [
+        321,
+        1233,
+        646,
+        1560
+      ],
+      "pixel": [
+        483,
+        1396
+      ],
+      "colour": "orange",
+      "width_mm": 79,
+      "gaps": {
+        "1": 0.0,
+        "2": 9.4,
+        "4": 6.9,
+        "5": 0.0,
+        "6": 2.4,
+        "7": 13.4,
+        "8": 20.2
+      },
+      "on": []
+    },
+    {
+      "id": 4,
+      "kind": "mug",
+      "box": [
+        531,
+        548,
+        1004,
+        950
+      ],
+      "pixel": [
+        767,
+        749
+      ],
+      "colour": "green",
+      "width_mm": 100,
+      "gaps": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 7.0,
+        "5": 0.7,
+        "6": 9.6,
+        "7": 0.0,
+        "8": 11.5
+      },
+      "on": []
+    },
+    {
+      "id": 5,
+      "kind": "red gear",
+      "box": [
+        622,
+        978,
+        1004,
+        1377
+      ],
+      "pixel": [
+        813,
+        1177
+      ],
+      "colour": "red",
+      "width_mm": 94,
+      "gaps": {
+        "1": 1.3,
+        "2": 3.1,
+        "3": 0.0,
+        "4": 0.7,
+        "6": 0.0,
+        "7": 7.2,
+        "8": 11.5
+      },
+      "on": []
+    },
+    {
+      "id": 6,
+      "kind": "yellow gear",
+      "box": [
+        747,
+        1342,
+        965,
+        1604
+      ],
+      "pixel": [
+        856,
+        1473
+      ],
+      "colour": "yellow",
+      "width_mm": 53,
+      "gaps": {
+        "1": 4.9,
+        "2": 12.1,
+        "3": 2.5,
+        "4": 9.6,
+        "5": 0.0,
+        "7": 16.0,
+        "8": 12.3
+      },
+      "on": []
+    },
+    {
+      "id": 7,
+      "kind": "hand",
+      "box": [
+        681,
+        40,
+        1836,
+        688
+      ],
+      "pixel": [
+        1258,
+        364
+      ],
+      "colour": "yellow",
+      "width_mm": 165,
+      "gaps": {
+        "1": 5.0,
+        "2": 0.0,
+        "3": 13.7,
+        "4": 0.0,
+        "5": 7.3,
+        "6": 16.0,
+        "8": 5.5
+      },
+      "on": []
+    },
+    {
+      "id": 8,
+      "kind": "saucer",
+      "box": [
+        1469,
+        906,
+        2267,
+        1698
+      ],
+      "pixel": [
+        1868,
+        1302
+      ],
+      "colour": "grey",
+      "width_mm": 195,
+      "gaps": {
+        "1": 22.4,
+        "2": 19.4,
+        "3": 20.2,
+        "4": 11.6,
+        "5": 11.5,
+        "6": 12.3,
+        "7": 5.4
+      },
+      "on": []
+    }
+  ],
+  "graph": {
+    "hand_present": true,
+    "left_to_right": [
+      "red_gear_1",
+      "plate",
+      "mandarin",
+      "mug",
+      "red_gear_2",
+      "yellow_gear",
+      "hand",
+      "saucer"
+    ],
+    "top_to_bottom": [
+      "hand",
+      "plate",
+      "mug",
+      "red_gear_1",
+      "red_gear_2",
+      "saucer",
+      "mandarin",
+      "yellow_gear"
+    ],
+    "objects": [
+      {
+        "id": "red_gear_1",
+        "type": "red gear",
+        "colour": "red",
+        "pixel": [
+          394,
+          1051
+        ],
+        "size_mm": 87,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "mandarin",
+          "mug"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "mandarin",
+            0
+          ],
+          [
+            "mug",
+            0
+          ],
+          [
+            "plate",
+            1
+          ],
+          [
+            "red_gear_2",
+            13
+          ],
+          [
+            "yellow_gear",
+            49
+          ],
+          [
+            "hand",
+            50
+          ],
+          [
+            "saucer",
+            220
+          ]
+        ]
+      },
+      {
+        "id": "plate",
+        "type": "plate",
+        "colour": "yellow",
+        "pixel": [
+          420,
+          598
+        ],
+        "size_mm": 127,
+        "pickable": false,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "mug",
+          "hand"
+        ],
+        "touching_hand": true,
+        "nearest_gap_mm": [
+          [
+            "mug",
+            0
+          ],
+          [
+            "hand",
+            0
+          ],
+          [
+            "red_gear_1",
+            1
+          ],
+          [
+            "red_gear_2",
+            32
+          ],
+          [
+            "mandarin",
+            94
+          ],
+          [
+            "yellow_gear",
+            123
+          ],
+          [
+            "saucer",
+            194
+          ]
+        ]
+      },
+      {
+        "id": "mandarin",
+        "type": "mandarin",
+        "colour": "orange",
+        "pixel": [
+          483,
+          1396
+        ],
+        "size_mm": 79,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "red_gear_1",
+          "red_gear_2"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_gear_1",
+            0
+          ],
+          [
+            "red_gear_2",
+            0
+          ],
+          [
+            "yellow_gear",
+            24
+          ],
+          [
+            "mug",
+            69
+          ],
+          [
+            "plate",
+            94
+          ],
+          [
+            "hand",
+            134
+          ],
+          [
+            "saucer",
+            202
+          ]
+        ]
+      },
+      {
+        "id": "mug",
+        "type": "mug",
+        "colour": "green",
+        "pixel": [
+          767,
+          749
+        ],
+        "size_mm": 100,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "red_gear_1",
+          "plate",
+          "hand"
+        ],
+        "touching_hand": true,
+        "nearest_gap_mm": [
+          [
+            "red_gear_1",
+            0
+          ],
+          [
+            "plate",
+            0
+          ],
+          [
+            "hand",
+            0
+          ],
+          [
+            "red_gear_2",
+            7
+          ],
+          [
+            "mandarin",
+            70
+          ],
+          [
+            "yellow_gear",
+            96
+          ],
+          [
+            "saucer",
+            115
+          ]
+        ]
+      },
+      {
+        "id": "red_gear_2",
+        "type": "red gear",
+        "colour": "red",
+        "pixel": [
+          813,
+          1177
+        ],
+        "size_mm": 94,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "mandarin",
+          "yellow_gear"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "mandarin",
+            0
+          ],
+          [
+            "yellow_gear",
+            0
+          ],
+          [
+            "mug",
+            7
+          ],
+          [
+            "red_gear_1",
+            13
+          ],
+          [
+            "plate",
+            31
+          ],
+          [
+            "hand",
+            72
+          ],
+          [
+            "saucer",
+            115
+          ]
+        ]
+      },
+      {
+        "id": "yellow_gear",
+        "type": "yellow gear",
+        "colour": "yellow",
+        "pixel": [
+          856,
+          1473
+        ],
+        "size_mm": 53,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "red_gear_2"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_gear_2",
+            0
+          ],
+          [
+            "mandarin",
+            25
+          ],
+          [
+            "red_gear_1",
+            49
+          ],
+          [
+            "mug",
+            96
+          ],
+          [
+            "plate",
+            121
+          ],
+          [
+            "saucer",
+            123
+          ],
+          [
+            "hand",
+            160
+          ]
+        ]
+      },
+      {
+        "id": "hand",
+        "type": "hand",
+        "colour": "yellow",
+        "pixel": [
+          1258,
+          364
+        ],
+        "size_mm": 165,
+        "pickable": false,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "plate",
+          "mug"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "plate",
+            0
+          ],
+          [
+            "mug",
+            0
+          ],
+          [
+            "red_gear_1",
+            50
+          ],
+          [
+            "saucer",
+            55
+          ],
+          [
+            "red_gear_2",
+            73
+          ],
+          [
+            "mandarin",
+            137
+          ],
+          [
+            "yellow_gear",
+            160
+          ]
+        ]
+      },
+      {
+        "id": "saucer",
+        "type": "saucer",
+        "colour": "grey",
+        "pixel": [
+          1868,
+          1302
+        ],
+        "size_mm": 195,
+        "pickable": false,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "hand",
+            54
+          ],
+          [
+            "red_gear_2",
+            115
+          ],
+          [
+            "mug",
+            116
+          ],
+          [
+            "yellow_gear",
+            123
+          ],
+          [
+            "plate",
+            194
+          ],
+          [
+            "mandarin",
+            202
+          ],
+          [
+            "red_gear_1",
+            224
+          ]
+        ]
+      },
+      {
+        "id": "grey_tray",
+        "type": "grey tray",
+        "pickable": false,
+        "note": "the plastic tray on the left; a place to put things"
+      },
+      {
+        "id": "black_tray",
+        "type": "black tray",
+        "pickable": false,
+        "note": "the black mat on the right; a place to put things"
+      }
+    ]
+  },
+  "results": [
+    {
+      "instruction_id": "scene_10_i1",
+      "target_pixel": [
+        856,
+        1473
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "yellow_gear"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_10_i2",
+      "target_pixel": [
+        483,
+        1396
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "mandarin"
+        },
+        {
+          "action": "place",
+          "object": "plate"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_10_i3",
+      "target_pixel": null,
+      "actions": [
+        {
+          "action": "ask_user",
+          "question": "Which red gear do you mean, the left one (red_gear_1) or the right one (red_gear_2)?"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_10_i4",
+      "target_pixel": [
+        394,
+        1051
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "red_gear_1"
+        },
+        {
+          "action": "place",
+          "object": "plate"
+        },
+        {
+          "action": "pick",
+          "object": "red_gear_2"
+        },
+        {
+          "action": "place",
+          "object": "plate"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_10_i5",
+      "target_pixel": null,
+      "actions": [
+        {
+          "action": "refuse",
+          "reason": "The instruction asks to take an object out of a person's hand, which is not allowed."
+        }
+      ]
+    }
+  ]
+}

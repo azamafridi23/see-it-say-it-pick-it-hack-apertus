@@ -1,0 +1,23 @@
+{
+  "started_at_utc": "2026-10-14T14:50:53.832216+00:00",
+  "model": "apertus-v1.5-70b",
+  "base_url": "https://hackapertus.livemap.sh/v1",
+  "data": "dataset/scene_01..scene_10",
+  "max_side": 1024,
+  "temperature": 0,
+  "max_tokens": 800,
+  "parallel": 5,
+  "timeout_seconds": 90,
+  "thinking": false,
+  "safety": true,
+  "widths": true,
+  "gaps": true,
+  "y_scale": 1.065,
+  "y_shift_px": 40,
+  "fresh_detection": true,
+  "elapsed_seconds": 160.115,
+  "scenes_completed": 10,
+  "instructions_completed": 50,
+  "calls": 105,
+  "request_errors": 0
+}

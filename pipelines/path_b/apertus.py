@@ -6,6 +6,7 @@ that returns the reply text. ``ApertusClient`` is one for a server, and
 instead of an exception.
 """
 import json
+import ssl
 import sys
 import threading
 import time
@@ -47,7 +48,8 @@ class ApertusClient:
 
     def __init__(self, base_url: str, model: str, max_side: int,
                  timeout: float, api_key: str = "none", parallel: int = 5,
-                 thinking: bool = False) -> None:
+                 thinking: bool = False,
+                 ssl_context: ssl.SSLContext | None = None) -> None:
         """Set up the client; no request is made yet.
 
         Args:
@@ -58,12 +60,14 @@ class ApertusClient:
             api_key: The bearer token for the server.
             parallel: The most calls in flight at once.
             thinking: Whether Apertus thinks before it answers.
+            ssl_context: Optional verified TLS context for HTTPS requests.
         """
         self.url = base_url.rstrip("/") + "/chat/completions"
         self.model = model
         self.max_side = max_side
         self.timeout = timeout
         self.thinking = thinking
+        self._ssl_context = ssl_context
         self._headers = {"Content-Type": "application/json",
                          "Authorization": f"Bearer {api_key}"}
         self._gate = threading.BoundedSemaphore(parallel)
@@ -139,7 +143,7 @@ class ApertusClient:
                                              headers=self._headers)
             try:
                 with self._gate, urllib.request.urlopen(
-                        request, timeout=self.timeout) as response:
+                        request, timeout=self.timeout, context=self._ssl_context) as response:
                     return json.loads(response.read())
 
             except urllib.error.HTTPError as error:

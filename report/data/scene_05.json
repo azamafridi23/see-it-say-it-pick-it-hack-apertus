@@ -1,0 +1,421 @@
+{
+  "scene": "scene_05",
+  "elapsed_seconds": 17.339,
+  "measured_objects": [
+    {
+      "id": 1,
+      "kind": "mug",
+      "box": [
+        1444,
+        367,
+        1826,
+        803
+      ],
+      "pixel": [
+        1635,
+        585
+      ],
+      "colour": "green",
+      "width_mm": 96,
+      "gaps": {
+        "2": 1.1,
+        "3": 0.0,
+        "4": 3.3,
+        "5": 3.6
+      },
+      "on": []
+    },
+    {
+      "id": 2,
+      "kind": "banana",
+      "box": [
+        1444,
+        847,
+        1826,
+        1774
+      ],
+      "pixel": [
+        1635,
+        1310
+      ],
+      "colour": "yellow",
+      "width_mm": 94,
+      "gaps": {
+        "1": 1.1,
+        "3": 6.0,
+        "4": 0.0,
+        "5": 3.6
+      },
+      "on": []
+    },
+    {
+      "id": 3,
+      "kind": "saucer",
+      "box": [
+        1750,
+        149,
+        2264,
+        607
+      ],
+      "pixel": [
+        2007,
+        378
+      ],
+      "colour": "yellow",
+      "width_mm": 117,
+      "gaps": {
+        "1": 0.0,
+        "2": 6.0,
+        "4": 8.3,
+        "5": 0.0
+      },
+      "on": []
+    },
+    {
+      "id": 4,
+      "kind": "plate",
+      "box": [
+        1677,
+        934,
+        2436,
+        1709
+      ],
+      "pixel": [
+        2056,
+        1321
+      ],
+      "colour": "white",
+      "width_mm": 186,
+      "gaps": {
+        "1": 3.3,
+        "2": 0.0,
+        "3": 8.3,
+        "5": 0.5
+      },
+      "on": []
+    },
+    {
+      "id": 5,
+      "kind": "mandarin",
+      "box": [
+        1971,
+        585,
+        2289,
+        912
+      ],
+      "pixel": [
+        2130,
+        748
+      ],
+      "colour": "orange",
+      "width_mm": 80,
+      "gaps": {
+        "1": 3.7,
+        "2": 3.6,
+        "3": 0.0,
+        "4": 0.5
+      },
+      "on": []
+    }
+  ],
+  "graph": {
+    "hand_present": false,
+    "left_to_right": [
+      "mug",
+      "banana",
+      "saucer",
+      "plate",
+      "mandarin"
+    ],
+    "top_to_bottom": [
+      "saucer",
+      "mug",
+      "mandarin",
+      "banana",
+      "plate"
+    ],
+    "objects": [
+      {
+        "id": "mug",
+        "type": "mug",
+        "colour": "green",
+        "pixel": [
+          1635,
+          585
+        ],
+        "size_mm": 96,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "saucer"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "saucer",
+            0
+          ],
+          [
+            "banana",
+            11
+          ],
+          [
+            "plate",
+            33
+          ],
+          [
+            "mandarin",
+            36
+          ]
+        ]
+      },
+      {
+        "id": "banana",
+        "type": "banana",
+        "colour": "yellow",
+        "pixel": [
+          1635,
+          1310
+        ],
+        "size_mm": 94,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "plate"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "plate",
+            0
+          ],
+          [
+            "mug",
+            11
+          ],
+          [
+            "mandarin",
+            36
+          ],
+          [
+            "saucer",
+            60
+          ]
+        ]
+      },
+      {
+        "id": "saucer",
+        "type": "saucer",
+        "colour": "yellow",
+        "pixel": [
+          2007,
+          378
+        ],
+        "size_mm": 117,
+        "pickable": false,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "mug",
+          "mandarin"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "mug",
+            0
+          ],
+          [
+            "mandarin",
+            0
+          ],
+          [
+            "banana",
+            60
+          ],
+          [
+            "plate",
+            83
+          ]
+        ]
+      },
+      {
+        "id": "plate",
+        "type": "plate",
+        "colour": "white",
+        "pixel": [
+          2056,
+          1321
+        ],
+        "size_mm": 186,
+        "pickable": false,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "banana"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "banana",
+            0
+          ],
+          [
+            "mandarin",
+            5
+          ],
+          [
+            "mug",
+            33
+          ],
+          [
+            "saucer",
+            83
+          ]
+        ]
+      },
+      {
+        "id": "mandarin",
+        "type": "mandarin",
+        "colour": "orange",
+        "pixel": [
+          2130,
+          748
+        ],
+        "size_mm": 80,
+        "pickable": true,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "saucer"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "saucer",
+            0
+          ],
+          [
+            "plate",
+            5
+          ],
+          [
+            "banana",
+            36
+          ],
+          [
+            "mug",
+            37
+          ]
+        ]
+      },
+      {
+        "id": "grey_tray",
+        "type": "grey tray",
+        "pickable": false,
+        "note": "the plastic tray on the left; a place to put things"
+      },
+      {
+        "id": "black_tray",
+        "type": "black tray",
+        "pickable": false,
+        "note": "the black mat on the right; a place to put things"
+      }
+    ]
+  },
+  "results": [
+    {
+      "instruction_id": "scene_05_i1",
+      "target_pixel": [
+        1635,
+        1310
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "banana"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_05_i2",
+      "target_pixel": [
+        1635,
+        1310
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "banana"
+        },
+        {
+          "action": "place",
+          "object": "plate"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_05_i3",
+      "target_pixel": [
+        2130,
+        748
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "mandarin"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_05_i4",
+      "target_pixel": [
+        1635,
+        585
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "mug"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        },
+        {
+          "action": "pick",
+          "object": "banana"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        },
+        {
+          "action": "pick",
+          "object": "mandarin"
+        },
+        {
+          "action": "place",
+          "object": "grey_tray"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_05_i5",
+      "target_pixel": null,
+      "actions": [
+        {
+          "action": "ask_user",
+          "question": "Which object do you mean? There are three pickable objects: the green mug, the yellow banana, and the orange mandarin."
+        }
+      ]
+    }
+  ]
+}

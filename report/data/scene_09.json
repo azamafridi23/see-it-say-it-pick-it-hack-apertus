@@ -1,0 +1,702 @@
+{
+  "scene": "scene_09",
+  "elapsed_seconds": 20.16,
+  "measured_objects": [
+    {
+      "id": 1,
+      "kind": "red gear",
+      "box": [
+        105,
+        1333,
+        509,
+        1763
+      ],
+      "pixel": [
+        307,
+        1548
+      ],
+      "colour": "red",
+      "width_mm": 98,
+      "gaps": {
+        "2": 1.8,
+        "3": 11.7,
+        "4": 0.0,
+        "5": 6.0,
+        "6": 3.5,
+        "7": 7.8,
+        "8": 23.7
+      },
+      "on": []
+    },
+    {
+      "id": 2,
+      "kind": "red gear",
+      "box": [
+        179,
+        860,
+        570,
+        1261
+      ],
+      "pixel": [
+        374,
+        1060
+      ],
+      "colour": "red",
+      "width_mm": 96,
+      "gaps": {
+        "1": 1.8,
+        "3": 0.1,
+        "4": 0.0,
+        "5": 4.8,
+        "6": 2.1,
+        "7": 4.6,
+        "8": 22.3
+      },
+      "on": []
+    },
+    {
+      "id": 3,
+      "kind": "saucer",
+      "box": [
+        208,
+        352,
+        693,
+        854
+      ],
+      "pixel": [
+        450,
+        603
+      ],
+      "colour": "yellow",
+      "width_mm": 121,
+      "gaps": {
+        "1": 11.9,
+        "2": 0.1,
+        "4": 8.7,
+        "5": 12.0,
+        "6": 3.2,
+        "7": 1.5,
+        "8": 19.7
+      },
+      "on": []
+    },
+    {
+      "id": 4,
+      "kind": "mandarin",
+      "box": [
+        497,
+        1203,
+        791,
+        1501
+      ],
+      "pixel": [
+        644,
+        1352
+      ],
+      "colour": "orange",
+      "width_mm": 72,
+      "gaps": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 8.6,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 1.8,
+        "8": 16.9
+      },
+      "on": []
+    },
+    {
+      "id": 5,
+      "kind": "yellow gear",
+      "box": [
+        754,
+        1333,
+        955,
+        1567
+      ],
+      "pixel": [
+        854,
+        1450
+      ],
+      "colour": "yellow",
+      "width_mm": 49,
+      "gaps": {
+        "1": 6.0,
+        "2": 4.8,
+        "3": 11.8,
+        "4": 0.0,
+        "6": 0.0,
+        "7": 4.9,
+        "8": 12.9
+      },
+      "on": []
+    },
+    {
+      "id": 6,
+      "kind": "red gear",
+      "box": [
+        654,
+        984,
+        1060,
+        1370
+      ],
+      "pixel": [
+        857,
+        1177
+      ],
+      "colour": "red",
+      "width_mm": 95,
+      "gaps": {
+        "1": 3.5,
+        "2": 2.1,
+        "3": 3.2,
+        "4": 0.0,
+        "5": 0.0,
+        "7": 0.0,
+        "8": 10.4
+      },
+      "on": []
+    },
+    {
+      "id": 7,
+      "kind": "red cube",
+      "box": [
+        754,
+        642,
+        1224,
+        1131
+      ],
+      "pixel": [
+        989,
+        886
+      ],
+      "colour": "red",
+      "width_mm": 117,
+      "gaps": {
+        "1": 7.8,
+        "2": 4.5,
+        "3": 1.5,
+        "4": 1.8,
+        "5": 5.0,
+        "6": 0.0,
+        "8": 6.3
+      },
+      "on": []
+    },
+    {
+      "id": 8,
+      "kind": "plate",
+      "box": [
+        1481,
+        912,
+        2277,
+        1719
+      ],
+      "pixel": [
+        1879,
+        1315
+      ],
+      "colour": "grey",
+      "width_mm": 195,
+      "gaps": {
+        "1": 23.5,
+        "2": 22.7,
+        "3": 19.7,
+        "4": 16.9,
+        "5": 12.9,
+        "6": 10.4,
+        "7": 6.4
+      },
+      "on": []
+    }
+  ],
+  "graph": {
+    "hand_present": false,
+    "left_to_right": [
+      "red_gear_1",
+      "red_gear_2",
+      "saucer",
+      "mandarin",
+      "yellow_gear",
+      "red_gear_3",
+      "red_cube",
+      "plate"
+    ],
+    "top_to_bottom": [
+      "saucer",
+      "red_cube",
+      "red_gear_2",
+      "red_gear_3",
+      "plate",
+      "mandarin",
+      "yellow_gear",
+      "red_gear_1"
+    ],
+    "objects": [
+      {
+        "id": "red_gear_1",
+        "type": "red gear",
+        "colour": "red",
+        "pixel": [
+          307,
+          1548
+        ],
+        "size_mm": 98,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "mandarin"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "mandarin",
+            0
+          ],
+          [
+            "red_gear_2",
+            18
+          ],
+          [
+            "red_gear_3",
+            35
+          ],
+          [
+            "yellow_gear",
+            60
+          ],
+          [
+            "red_cube",
+            78
+          ],
+          [
+            "saucer",
+            117
+          ],
+          [
+            "plate",
+            237
+          ]
+        ]
+      },
+      {
+        "id": "red_gear_2",
+        "type": "red gear",
+        "colour": "red",
+        "pixel": [
+          374,
+          1060
+        ],
+        "size_mm": 96,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "mandarin"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "mandarin",
+            0
+          ],
+          [
+            "saucer",
+            1
+          ],
+          [
+            "red_gear_1",
+            18
+          ],
+          [
+            "red_gear_3",
+            21
+          ],
+          [
+            "red_cube",
+            46
+          ],
+          [
+            "yellow_gear",
+            48
+          ],
+          [
+            "plate",
+            223
+          ]
+        ]
+      },
+      {
+        "id": "saucer",
+        "type": "saucer",
+        "colour": "yellow",
+        "pixel": [
+          450,
+          603
+        ],
+        "size_mm": 121,
+        "pickable": false,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_gear_2",
+            1
+          ],
+          [
+            "red_cube",
+            15
+          ],
+          [
+            "red_gear_3",
+            32
+          ],
+          [
+            "mandarin",
+            87
+          ],
+          [
+            "red_gear_1",
+            119
+          ],
+          [
+            "yellow_gear",
+            120
+          ],
+          [
+            "plate",
+            197
+          ]
+        ]
+      },
+      {
+        "id": "mandarin",
+        "type": "mandarin",
+        "colour": "orange",
+        "pixel": [
+          644,
+          1352
+        ],
+        "size_mm": 72,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "red_gear_1",
+          "red_gear_2",
+          "yellow_gear",
+          "red_gear_3"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_gear_1",
+            0
+          ],
+          [
+            "red_gear_2",
+            0
+          ],
+          [
+            "yellow_gear",
+            0
+          ],
+          [
+            "red_gear_3",
+            0
+          ],
+          [
+            "red_cube",
+            18
+          ],
+          [
+            "saucer",
+            86
+          ],
+          [
+            "plate",
+            169
+          ]
+        ]
+      },
+      {
+        "id": "yellow_gear",
+        "type": "yellow gear",
+        "colour": "yellow",
+        "pixel": [
+          854,
+          1450
+        ],
+        "size_mm": 49,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "mandarin",
+          "red_gear_3"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "mandarin",
+            0
+          ],
+          [
+            "red_gear_3",
+            0
+          ],
+          [
+            "red_gear_2",
+            48
+          ],
+          [
+            "red_cube",
+            49
+          ],
+          [
+            "red_gear_1",
+            60
+          ],
+          [
+            "saucer",
+            118
+          ],
+          [
+            "plate",
+            129
+          ]
+        ]
+      },
+      {
+        "id": "red_gear_3",
+        "type": "red gear",
+        "colour": "red",
+        "pixel": [
+          857,
+          1177
+        ],
+        "size_mm": 95,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "mandarin",
+          "yellow_gear",
+          "red_cube"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "mandarin",
+            0
+          ],
+          [
+            "yellow_gear",
+            0
+          ],
+          [
+            "red_cube",
+            0
+          ],
+          [
+            "red_gear_2",
+            21
+          ],
+          [
+            "saucer",
+            32
+          ],
+          [
+            "red_gear_1",
+            35
+          ],
+          [
+            "plate",
+            104
+          ]
+        ]
+      },
+      {
+        "id": "red_cube",
+        "type": "red cube",
+        "colour": "red",
+        "pixel": [
+          989,
+          886
+        ],
+        "size_mm": 117,
+        "pickable": true,
+        "in": "grey_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [
+          "red_gear_3"
+        ],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_gear_3",
+            0
+          ],
+          [
+            "saucer",
+            15
+          ],
+          [
+            "mandarin",
+            18
+          ],
+          [
+            "red_gear_2",
+            45
+          ],
+          [
+            "yellow_gear",
+            50
+          ],
+          [
+            "plate",
+            63
+          ],
+          [
+            "red_gear_1",
+            78
+          ]
+        ]
+      },
+      {
+        "id": "plate",
+        "type": "plate",
+        "colour": "grey",
+        "pixel": [
+          1879,
+          1315
+        ],
+        "size_mm": 195,
+        "pickable": false,
+        "in": "black_tray",
+        "on": [],
+        "covered_by": [],
+        "touching": [],
+        "touching_hand": false,
+        "nearest_gap_mm": [
+          [
+            "red_cube",
+            64
+          ],
+          [
+            "red_gear_3",
+            104
+          ],
+          [
+            "yellow_gear",
+            129
+          ],
+          [
+            "mandarin",
+            169
+          ],
+          [
+            "saucer",
+            197
+          ],
+          [
+            "red_gear_2",
+            227
+          ],
+          [
+            "red_gear_1",
+            235
+          ]
+        ]
+      },
+      {
+        "id": "grey_tray",
+        "type": "grey tray",
+        "pickable": false,
+        "note": "the plastic tray on the left; a place to put things"
+      },
+      {
+        "id": "black_tray",
+        "type": "black tray",
+        "pickable": false,
+        "note": "the black mat on the right; a place to put things"
+      }
+    ]
+  },
+  "results": [
+    {
+      "instruction_id": "scene_09_i1",
+      "target_pixel": [
+        644,
+        1352
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "mandarin"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_09_i2",
+      "target_pixel": [
+        307,
+        1548
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "red_gear_1"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_09_i3",
+      "target_pixel": null,
+      "actions": [
+        {
+          "action": "ask_user",
+          "question": "Which object is lying on the grey part?"
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_09_i4",
+      "target_pixel": null,
+      "actions": [
+        {
+          "action": "refuse",
+          "reason": "There is no object called 'grey part' on the table."
+        }
+      ]
+    },
+    {
+      "instruction_id": "scene_09_i5",
+      "target_pixel": [
+        644,
+        1352
+      ],
+      "actions": [
+        {
+          "action": "pick",
+          "object": "mandarin"
+        },
+        {
+          "action": "place",
+          "object": "plate"
+        }
+      ]
+    }
+  ]
+}

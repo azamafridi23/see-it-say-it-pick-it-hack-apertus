@@ -60,6 +60,16 @@ Mac, plus the download on the first run.
 .venv/bin/python pipelines/path_b/run.py
 ```
 
+### Local robot action app
+
+The Next.js + Python **Pick Lab** playground lives in `apps/`. It includes saved-result replay, an animated 2D arm, a photo view with target pixels, and explicit live inference for Path A and Path B. See [apps/README.md](apps/README.md) for setup and limitations. Start both services from this repository's root with `npm run dev` after installing the app dependencies. Replay makes no Apertus API calls.
+
+| Path | What it is |
+|---|---|
+| `pipelines/path_a/`, `pipelines/path_b/` | One folder per solution, each with its own `run.py`, `requirements.txt` and architecture notes |
+| `results/` | One results file and log per pipeline |
+| `docs/` | The organisers' notes (`CHALLENGE.md`, `DATA.md`, `safety_primer.md`) and ours on Apertus's limits |
+| `dataset/`, `starter/`, `schema/`, `baseline/`, `examples/` | The organisers' files, unchanged |
 It runs on the held-out scenes and writes `results_heldout_path_b.json`. With `--data dataset` it writes
 `results/path_b_dev.json` and prints the score. It needs no Hugging Face token and no local model, and takes
 about 2.5 minutes for 10 scenes.
