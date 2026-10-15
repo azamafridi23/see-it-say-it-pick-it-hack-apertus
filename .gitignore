@@ -34,10 +34,13 @@ artifacts/simulator/
 docs/slides/fig/canva/
 docs/slides/*.txt
 
-# Held-out runs: the submission file goes to Devpost, not into git
+# Held-out runs stay out of git, except the submitted answers below.
 results_heldout*
+# The submitted held-out answers and their log are kept.
+!/track_2a/results/results_heldout.json
 /logs/
-track_2a/results/logs/
+track_2a/results/logs/*
+!/track_2a/results/logs/results_heldout.log.jsonl
 
 # Path A prompt versions no longer used by the pipeline or the tests
 track_2a/src/pipelines/path_a/prompts/agent_safety_v1.txt
