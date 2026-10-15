@@ -44,7 +44,8 @@ from transformers import Sam3Model, Sam3Processor  # noqa: E402
 
 from workcell import CELL  # noqa: E402
 
-DEVICE = "mps" if torch.backends.mps.is_available() else "cpu"
+DEVICE = ("cuda" if torch.cuda.is_available()
+          else "mps" if torch.backends.mps.is_available() else "cpu")
 CACHE = Path(__file__).resolve().parent / "out" / "cache"
 # The pinned ungated copy from workcell.ini, unless SAM3_MODEL names
 # another repository (facebook/sam3 needs HF_TOKEN).

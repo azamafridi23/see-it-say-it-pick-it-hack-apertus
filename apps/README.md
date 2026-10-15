@@ -4,14 +4,14 @@ Next.js animates robot actions; FastAPI reads replay files and runs the existing
 
 ## Start
 
-From the repository root (Node.js 20.9+ and Python 3.12+):
+From the repository root (Node.js 20.9+ and [uv](https://docs.astral.sh/uv/)):
 
 ```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -r apps/api/requirements.txt
-npm install
-npm run dev
+make app
 ```
+
+It installs both pipelines and the API's packages (`uv sync --group app`), then the web packages
+(`npm ci`), and starts both services (`npm run dev`).
 
 Open **http://localhost:3000**. The backend listens on `127.0.0.1:8000`. The launcher uses `.venv/bin/python` if present; `SIMULATOR_PYTHON` can select another interpreter. Stop both with Ctrl+C.
 
@@ -26,15 +26,7 @@ Selecting Replay switches the source to dataset because saved results belong to 
 
 ## Live inference — run when you are ready
 
-1. Install the dependencies for the path you want to use in the same Python environment:
-
-   ```sh
-   # Path A (SAM 3 + Apertus, including graph planner)
-   .venv/bin/python -m pip install -r pipelines/path_a/requirements.txt
-
-   # Path B (Apertus detection + OpenCV measurements)
-   .venv/bin/python -m pip install -r pipelines/path_b/requirements.txt
-   ```
+1. `make app` already installs both pipelines' packages (`requirements.txt`).
 
 2. Configure `APERTUS_API_KEY`, `API_BASE_URL`, and `API_MODEL` in the root `.env`, following `.env.example`. Path A also needs `HF_TOKEN` and access to SAM 3. Secrets are read only in Python; they are never sent to the browser. Path A settings now pass through the app adapter without modifying the original pipeline defaults.
 

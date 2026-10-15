@@ -273,7 +273,7 @@ The server, model and key are read from `API_BASE_URL`, `API_MODEL` and
 first two.
 `--data` takes any folder of scenes, so the held-out run is the same command
 with `--data heldout`. With no server set
-anywhere, it uses a local vLLM server at `http://localhost:8000/v1`. The tests run offline, without a key:
+anywhere, it uses the hosted endpoint and `apertus-v1.5-70b`, as Path A does. The tests run offline, without a key:
 
 ```
 python -m unittest discover pipelines/path_b/tests
