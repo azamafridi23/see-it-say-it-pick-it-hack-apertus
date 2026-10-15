@@ -43,3 +43,8 @@ pipelines/path_a/prompts/agent_safety_v1.txt
 pipelines/path_a/prompts/agent_reference_v1.txt
 pipelines/path_a/prompts/agent_constraint_v2.txt
 pipelines/path_a/prompts/planner_v2.txt
+
+# Scenes the jury adds: only the instructions and the calibration are committed
+/scenes/*
+!/scenes/README.md
+!/scenes/calibration.json

@@ -199,11 +199,11 @@ def main() -> None:
     ap.add_argument("--workcell", type=Path, default=workcell.DEFAULT_PATH,
                     help="the workcell's settings (INI)")
     # The server and model come from API_BASE_URL and API_MODEL in .env,
-    # unless given here; without either, a local vLLM server.
+    # unless given here; without either, the hosted endpoint, as in Path A.
     ap.add_argument("--base-url", default=env_value("API_BASE_URL")
-                    or "http://localhost:8000/v1")
+                    or "https://hackapertus.livemap.sh/v1")
     ap.add_argument("--model", default=env_value("API_MODEL")
-                    or "swiss-ai/Apertus-v1.5-8B")
+                    or "apertus-v1.5-70b")
     ap.add_argument("--max-side", type=int, default=1024,
                     help="resize the photo so its long side is at most this")
     ap.add_argument("--timeout", type=float, default=180)
